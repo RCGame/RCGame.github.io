@@ -22,7 +22,18 @@
 
     return "unknown";
 }
-    alert(getMobileOperatingSystem());
+    switch(getMobileOperatingSystem())
+    {
+        case "iOS":
+            window.location.href = "https://itunes.apple.com/app/cat-sorcerer/id573517446?mt=8";
+            break;
+        case "Android":
+            window.location.href = "https://play.google.com/store/apps/details?id=cat.sorcerer.rcgame&hl=en";
+            break;
+        default:
+            window.location.href = "https://www.facebook.com/pg/Cat-Sorcerer-348347835261145/about/";
+            break;
+    }
     </script>
 </head>
 <body>
