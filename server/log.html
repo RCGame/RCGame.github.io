@@ -4,11 +4,17 @@
   <script>
     $(document).ready(function() {
     $.get("address.html", function(addr) {
-      window.location.href = "http://" + addr;
+      $.get("http://" + addr + "/api/CatSorcerer/GetLastLogs?last=50", function(data) {
+        $.each(data, function(i,v) {
+          $("table").append("<tr><td>" + v.Id + "</td><td>" + v.Message + "</td></tr>");
+        }
+      });
     });
     });
   </script>
 </head>
 <body>
+  <table>
+  </table>
 </body>
 </html>
