@@ -7,7 +7,7 @@
       $.get("http://" + addr + "/api/CatSorcerer/GetLastLogs?last=50", function(data) {
         $.each(data, function(i,v) {
           $("table").append("<tr><td>" + v.Id + "</td><td>" + v.Message + "</td></tr>");
-        }
+        });
       });
     });
     });
