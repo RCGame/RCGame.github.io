@@ -1,6 +1,5 @@
 <html>
 <head>
-    <meta http-equiv="Content-Security-Policy" content="upgrade-insecure-requests"> 
     <script src="/jquery.js"></script>
     <script>
         function getAddress() {
@@ -13,7 +12,7 @@
         $(document).ready(function () {
             var lastId = 0;
             getAddress().done(function (addr) {
-                $.get("http://" + addr + "/api/CatSorcerer/GetLastLogs?last=300", function (data) {
+                $.get("https://" + addr + "/api/CatSorcerer/GetLastLogs?last=300", function (data) {
                     $.each(data, function (i, v) {
                         $("table").append("<tr><td>" + v.Id + "</td><td>" + v.Message + "</td></tr>");
                         lastId = v.Id;
@@ -23,7 +22,7 @@
                         var fromId = lastId + 1;
                         getAddress().done(function (addr) {
                             $.ajax({
-                                url: "http://" + addr + "/api/CatSorcerer/GetLogs?fromId=" + fromId,
+                                url: "https://" + addr + "/api/CatSorcerer/GetLogs?fromId=" + fromId,
                                 type: "GET",
                                 dataType: "jsonp",
                                 success: function (data) {
