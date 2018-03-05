@@ -16,31 +16,36 @@
         $(document).ready(function () {
             var lastId = 0;
             getAddress().done(function (addr) {
-                $.get("https://" + addr + "/api/CatSorcerer/GetLastLogs?last=300", function (data) {
-                    $.each(data, function (i, v) {
-                        $("table").append("<tr><td>" + v.Id + "</td><td>" + v.Message + "</td></tr>");
-                        lastId = v.Id;
-                    });
-                    window.scrollTo(0, document.body.scrollHeight);
-                    window.setInterval(function () {
-                        var fromId = lastId + 1;
-                        getAddress().done(function (addr) {
-                            $.ajax({
-                                url: "https://" + addr + "/api/CatSorcerer/GetLogs?fromId=" + fromId,
-                                type: "GET",
-                                dataType: "jsonp",
-                                success: function (data) {
-                                    $.each(data, function (i, v) {
-                                        $("table").append("<tr><td>" + v.Id + "</td><td>" + v.Message + "</td></tr>");
-                                        lastId = v.Id;
-                                    });
-                                    if (data.length > 0 && $("#autoScroll").prop("checked")) {
-                                        window.scrollTo(0, document.body.scrollHeight);
-                                    }
-                                }
-                            });
+                $.ajax({
+                    url: "https://" + addr + "/api/CatSorcerer/GetLastLogs?last=300",
+                    type: "GET",
+                    dataType: "jsonp",
+                    success: function (data) {
+                        $.each(data, function (i, v) {
+                            $("table").append("<tr><td>" + v.Id + "</td><td>" + v.Message + "</td></tr>");
+                            lastId = v.Id;
                         });
-                    }, 20 * 1000);
+                        window.scrollTo(0, document.body.scrollHeight);
+                        window.setInterval(function () {
+                            var fromId = lastId + 1;
+                            getAddress().done(function (addr) {
+                                $.ajax({
+                                    url: "https://" + addr + "/api/CatSorcerer/GetLogs?fromId=" + fromId,
+                                    type: "GET",
+                                    dataType: "jsonp",
+                                    success: function (data) {
+                                        $.each(data, function (i, v) {
+                                            $("table").append("<tr><td>" + v.Id + "</td><td>" + v.Message + "</td></tr>");
+                                            lastId = v.Id;
+                                        });
+                                        if (data.length > 0 && $("#autoScroll").prop("checked")) {
+                                            window.scrollTo(0, document.body.scrollHeight);
+                                        }
+                                    }
+                                });
+                            });
+                        }, 20 * 1000);
+                    }
                 });
             });
         });
