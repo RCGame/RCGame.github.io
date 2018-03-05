@@ -5,13 +5,9 @@
     <script>
         function getAddress() {
             var d = $.Deferred();
-            if (window.location.hostname == "tingwa-pc" || window.location.hostname == "192.168.0.150") {
-                d.resolve(window.location.hostname);
-            } else {
-                $.get("address.html?a=" + Math.random()).done(function (addr) {
+            $.get("address.html?a=" + Math.random()).done(function (addr) {
                     d.resolve(addr);
                 });
-            }
             return d.promise();
         };
         $(document).ready(function () {
