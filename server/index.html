@@ -3,7 +3,7 @@
   <script src="/jquery.js"></script>
   <script>
     $(document).ready(function() {
-    $.get("address.html", function(addr) {
+    $.get("address.html?a=" + Math.random(), function(addr) {
       window.location.href = "http://" + addr;
     });
     });
