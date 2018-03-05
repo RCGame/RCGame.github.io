@@ -18,6 +18,7 @@
             getAddress().done(function (addr) {
                 $.ajax({
                     url: "https://" + addr + "/api/CatSorcerer/GetLastLogs?last=300",
+                    jsonp: "callback",
                     type: "GET",
                     dataType: "jsonp",
                     success: function (data) {
@@ -31,6 +32,7 @@
                             getAddress().done(function (addr) {
                                 $.ajax({
                                     url: "https://" + addr + "/api/CatSorcerer/GetLogs?fromId=" + fromId,
+                                    jsonp: "callback",
                                     type: "GET",
                                     dataType: "jsonp",
                                     success: function (data) {
