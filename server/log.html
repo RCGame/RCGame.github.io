@@ -2,13 +2,52 @@
 <head>
     <script src="/jquery.js"></script>
     <script>
-        $(document).ready(function () {
+        function getAddress() {
+            var d = $.Deferred();
+            if (window.location.hostname == "tingwa-pc" || window.location.hostname == "192.168.0.150") {
+                d.resolve(window.location.hostname);
+            } else {
                 $.get("address.html?a=" + Math.random()).done(function (addr) {
-                    window.location.href = "http://" + addr + "/log.html";
+                    d.resolve(addr);
                 });
+            }
+            return d.promise();
+        };
+        $(document).ready(function () {
+            var lastId = 0;
+            getAddress().done(function (addr) {
+                $.get("https://" + addr + "/api/CatSorcerer/GetLastLogs?last=300", function (data) {
+                    $.each(data, function (i, v) {
+                        $("table").append("<tr><td>" + v.Id + "</td><td>" + v.Message + "</td></tr>");
+                        lastId = v.Id;
+                    });
+                    window.scrollTo(0, document.body.scrollHeight);
+                    window.setInterval(function () {
+                        var fromId = lastId + 1;
+                        getAddress().done(function (addr) {
+                            $.ajax({
+                                url: "https://" + addr + "/api/CatSorcerer/GetLogs?fromId=" + fromId,
+                                type: "GET",
+                                dataType: "jsonp",
+                                success: function (data) {
+                                    $.each(data, function (i, v) {
+                                        $("table").append("<tr><td>" + v.Id + "</td><td>" + v.Message + "</td></tr>");
+                                        lastId = v.Id;
+                                    });
+                                    if (data.length > 0 && $("#autoScroll").prop("checked")) {
+                                        window.scrollTo(0, document.body.scrollHeight);
+                                    }
+                                }
+                            });
+                        });
+                    }, 20 * 1000);
+                });
+            });
         });
     </script>
 </head>
 <body>
+    <table></table>
+    <input id="autoScroll" type="checkbox" checked="checked" /><label for="autoScroll">Auto Scroll</label>
 </body>
 </html>
