@@ -1,22 +1,61 @@
 <html>
 <head>
-    <script src="/jquery.js"></script>
+    <script src="/Scripts/jquery-1.10.2.min.js"></script>
     <script>
+        var server = "";
+        var suppressGetConfigs = false;
+
         function getAddress() {
             var d = $.Deferred();
             if (window.location.hostname == "tingwa-pc" || window.location.hostname == "192.168.0.150") {
+                server = window.location.hostname;
                 d.resolve(window.location.hostname);
             } else {
                 $.get("address.html?a=" + Math.random()).done(function (addr) {
+                    server = addr;
                     d.resolve(addr);
                 });
             }
             return d.promise();
         };
+
+        function getConfigs() {
+            $.ajax({
+                url: "https://" + server + "/api/CatSorcerer/GetConfigs",
+                type: "GET",
+                dataType: "jsonp",
+                success: function (data) {
+                    $.each(data, function (i, v) {
+                        if (v.Key == "Active") {
+                            $("#active").prop("checked", v.Value == "True");
+                        }
+                    });
+                }
+            });
+        };
+
         $(document).ready(function () {
+            $("#active").change(function (e) {
+                suppressGetConfigs = true;
+                var t = window.setInterval(function () {
+                    $.ajax({
+                        url: "https://" + server + "/api/CatSorcerer/SaveConfigs",
+                        crossDomain: true,
+                        type: "POST",
+                        dataType: "json",
+                        contentType: "application/json",
+                        data: JSON.stringify([{ Key: "Active", Value: $("#active").prop("checked") ? "True" : "False" }]),
+                        success: function (data) {
+                            window.clearInterval(t);
+                            suppressGetConfigs = false;
+                        }
+                    });
+                }, 6 * 1000);
+            });
             var lastId = 0;
             var timer = window.setInterval(function () {
                 getAddress().done(function (addr) {
+                    getConfigs();
                     $.ajax({
                         url: "https://" + addr + "/api/CatSorcerer/GetLastLogs?last=300",
                         type: "GET",
@@ -31,6 +70,9 @@
                             window.setInterval(function () {
                                 var fromId = lastId + 1;
                                 getAddress().done(function (addr) {
+                                    if (!suppressGetConfigs) {
+                                        getConfigs();
+                                    }
                                     $.ajax({
                                         url: "https://" + addr + "/api/CatSorcerer/GetLogs?fromId=" + fromId,
                                         type: "GET",
@@ -57,5 +99,6 @@
 <body>
     <table></table>
     <input id="autoScroll" type="checkbox" checked="checked" /><label for="autoScroll">Auto Scroll</label>
+    <input id="active" type="checkbox" /><label for="active">Active</label>
 </body>
 </html>
