@@ -1,10 +1,10 @@
 [
   {
     "Key": "ShowRestorePurchaseButton",
-    "Value": "1"
+    "Value": "0"
   },
   {
     "Key": "ShowMyYoutubeButton",
-    "Value": "1"
+    "Value": "0"
   }
 ]
