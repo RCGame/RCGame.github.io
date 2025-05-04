@@ -48,6 +48,9 @@ function GetInstrumentColor(instrument) {
     case 6:
       color = 'rgb(4, 78, 55)';
       break;
+    case 7:
+      color = 'rgb(212, 154, 38)';
+      break;
     case 9:
       color = 'rgb(236, 102, 40)';
       break;
@@ -84,6 +87,10 @@ function GetLanguageColor(language)
       color = 'rgb(205, 8, 182)';
       break;
     case 128:
+      color = 'rgb(28, 8, 205)';
+      break;
+    case 256:
+      color = 'rgb(208, 241, 213)';
       break;
   }
   return color;
