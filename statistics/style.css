@@ -103,3 +103,6 @@ tbody tr:hover {
   overflow: auto;            /* vertical + horizontal if needed */
   border-radius: 8px;
 }
+
+th.sortable { cursor: pointer; user-select: none; }
+th .sort-indicator { margin-left: 6px; opacity: 0.6; font-size: 0.85em; }

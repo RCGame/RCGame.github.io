@@ -81,6 +81,8 @@ const LangaugeRegionEnum = {
   256: "Dutch"
 };
 
+
+
 // Helper to decode bit flags for LangaugeRegion
 function decodeLangFlags(value) {
   if (typeof value !== "number") return value;
@@ -127,6 +129,12 @@ $("#clearBtn").addEventListener("click", () => {
   statusEl.textContent = "";
 });
 
+// --- NEW: sort state (module-level)
+let SORT_STATE = { col: null, dir: null }; // dir: 'desc' | 'asc'
+let CURRENT_ROWS = []; // original data (array of objects)
+let CURRENT_COLS = []; // union of columns being shown
+
+// Replace your existing fetchAndRender's success section with this:
 async function fetchAndRender() {
   const url = urlInput.value.trim();
   if (!url) return;
@@ -139,14 +147,23 @@ async function fetchAndRender() {
     if (!resp.ok) throw new Error(`HTTP ${resp.status} ${resp.statusText}`);
     const data = await resp.json();
     if (!Array.isArray(data)) throw new Error("Response is not a JSON array.");
-    renderTable(data);
+
+    // NEW: set globals, reset sort
+    CURRENT_ROWS = data.slice();
+    SORT_STATE = { col: null, dir: null };
+
+    renderTable(CURRENT_ROWS);
     setStatus(`Loaded ${data.length} item(s).`);
   } catch (e) {
     setError(`Error: ${e.message}. ${corsHint(url)}`);
   }
 }
 
+// --- Unchanged helpers: valueToString, escapeHtml, mapEnumValue, decodeLangFlags, etc.
+
+// Replace your renderTable with the enhanced version:
 function renderTable(rows) {
+  // Derive columns (union), exclude ignored
   const cols = Array.from(
     rows.reduce((set, obj) => {
       if (obj && typeof obj === "object" && !Array.isArray(obj)) {
@@ -161,14 +178,28 @@ function renderTable(rows) {
     return;
   }
 
+  CURRENT_COLS = cols;
+
+  // If currently sorted, apply it to CURRENT_ROWS before drawing
+  const rowsToDraw = sortIfNeeded(CURRENT_ROWS);
+
   const thead = `
     <thead>
-      <tr>${cols.map(c => `<th>${escapeHtml(c)}</th>`).join("")}</tr>
+      <tr>
+        ${cols.map(c => {
+          const isActive = SORT_STATE.col === c;
+          const indicator = isActive ? (SORT_STATE.dir === "desc" ? "▼" : "▲") : "";
+          const aria = isActive ? (SORT_STATE.dir === "desc" ? "descending" : "ascending") : "none";
+          return `<th class="sortable" data-col="${escapeHtml(c)}" aria-sort="${aria}">
+                    ${escapeHtml(c)}<span class="sort-indicator">${indicator}</span>
+                  </th>`;
+        }).join("")}
+      </tr>
     </thead>`;
 
   const tbody = `
     <tbody>
-      ${rows.map(obj => {
+      ${rowsToDraw.map(obj => {
         if (!obj || typeof obj !== "object" || Array.isArray(obj)) {
           return `<tr><td colspan="${cols.length}">${escapeHtml(String(obj))}</td></tr>`;
         }
@@ -182,7 +213,100 @@ function renderTable(rows) {
     </tbody>`;
 
   output.innerHTML = `<table>${thead}${tbody}</table>`;
+
+  // Attach header click handlers
+  const head = output.querySelector("thead");
+  attachHeaderSortHandlers(head);
+
+  // If you’re using the fixed-header Option B from earlier, keep this call:
+  if (typeof buildFixedHeaderFrom === "function") {
+    const tableEl = output.querySelector("table");
+    buildFixedHeaderFrom(tableEl);
+  }
 }
+
+// --- NEW: click handlers + sorting utilities
+function attachHeaderSortHandlers(theadEl) {
+  theadEl.querySelectorAll("th.sortable").forEach(th => {
+    th.addEventListener("click", () => {
+      const col = th.getAttribute("data-col");
+      // Toggle rule: first click desc (high→low), then asc.
+      if (SORT_STATE.col === col) {
+        SORT_STATE.dir = SORT_STATE.dir === "desc" ? "asc" : "desc";
+      } else {
+        SORT_STATE.col = col;
+        SORT_STATE.dir = "desc";
+      }
+      // Redraw with new sort
+      renderTable(CURRENT_ROWS);
+    });
+  });
+}
+
+function sortIfNeeded(rows) {
+  if (!SORT_STATE.col || !SORT_STATE.dir) return rows;
+  const col = SORT_STATE.col;
+  const dir = SORT_STATE.dir;
+
+  // Build decorated array to keep sorting stable
+  const decorated = rows.map((row, idx) => {
+    const mapped = mapEnumValue(col, row?.[col]);
+    const comp = toComparable(mapped);
+    return { row, idx, comp };
+  });
+
+  decorated.sort((a, b) => {
+    const res = compareValues(a.comp, b.comp);
+    // 'desc' means high→low first
+    return dir === "desc" ? -res : res;
+  });
+
+  return decorated.map(d => d.row);
+}
+
+// Convert displayed (mapped) value into a comparable form
+function toComparable(v) {
+  if (v == null) return null;
+
+  // Try number
+  if (typeof v === "number") return { t: "n", v };
+  if (typeof v === "string") {
+    const num = parseFloat(v);
+    const numericLike = v.trim().match(/^[-+]?\d+(\.\d+)?$/);
+    if (numericLike && Number.isFinite(num)) return { t: "n", v: num };
+
+    // Optional: treat ISO-ish dates as dates (uncomment if you want date sorting)
+    // const ts = Date.parse(v);
+    // if (!Number.isNaN(ts)) return { t: "d", v: ts };
+
+    return { t: "s", v: v.toLowerCase() };
+  }
+
+  // Objects/arrays: compare by JSON text
+  return { t: "s", v: JSON.stringify(v).toLowerCase() };
+}
+
+// Order: numbers > strings > others; then by value; nulls last
+function compareValues(a, b) {
+  // Handle nulls/undefined uniformly
+  if (a == null && b == null) return 0;
+  if (a == null) return 1;
+  if (b == null) return -1;
+
+  // Type order
+  const order = { "n": 2, "s": 1, "d": 3 }; // if you enable 'd'ates, adjust order as you like
+  const ao = order[a.t] ?? 0;
+  const bo = order[b.t] ?? 0;
+  if (ao !== bo) return ao - bo;
+
+  // Same type → compare value
+  if (a.v < b.v) return -1;
+  if (a.v > b.v) return 1;
+  return 0;
+}
+
+
+
 
 function valueToString(v) {
   if (v == null) return "";                   // null/undefined → blank
