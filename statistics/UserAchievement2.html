@@ -1,0 +1,28 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>JSON URL → Table</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <h1>JSON URL → HTML Table</h1>
+
+  <div class="controls">
+    <label>
+      JSON endpoint:
+      <input id="urlInput" type="url" value="https://rcgame.azurewebsites.net/api/GetLevelAchievementsD4j2Drb88fDaKfQb75P?from=2025-11-05" />
+    </label>
+    <div>
+      <button id="fetchBtn" type="button">Fetch & Render</button>
+      <button id="clearBtn" type="button">Clear</button>
+    </div>
+    <div id="status" class="status"></div>
+  </div>
+
+  <div id="output"></div>
+
+  <script src="table-viewer.js"></script>
+</body>
+</html>

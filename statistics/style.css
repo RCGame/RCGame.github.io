@@ -1,0 +1,105 @@
+/* ---------- General Layout ---------- */
+body {
+  font-family: "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  margin: 32px;
+  background-color: #f9fafb;
+  color: #222;
+}
+
+h1 {
+  font-weight: 600;
+  margin-bottom: 20px;
+}
+
+.controls {
+  display: grid;
+  gap: 12px;
+  margin-bottom: 24px;
+  max-width: 1000px;
+}
+
+input[type="url"] {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  font-size: 1rem;
+  transition: border-color 0.2s ease;
+}
+
+input[type="url"]:focus {
+  border-color: #0078d7;
+  outline: none;
+  box-shadow: 0 0 3px rgba(0, 120, 215, 0.4);
+}
+
+button {
+  padding: 8px 14px;
+  margin-right: 6px;
+  background-color: #0078d7;
+  border: none;
+  color: white;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 0.95rem;
+  transition: background-color 0.2s ease;
+}
+
+button:hover {
+  background-color: #005fa3;
+}
+
+button:active {
+  background-color: #004a82;
+}
+
+.hint {
+  color: #555;
+  font-size: 0.9rem;
+}
+
+.status {
+  font-size: 0.95rem;
+  color: #444;
+}
+
+.status.error {
+  color: #b00;
+}
+
+/* ---------- Table Styling ---------- */
+table {
+  border-collapse: separate; /* helps avoid rare sticky glitches */
+  border-spacing: 0;
+  width: 100%;
+  background: #fff;
+}
+
+th, td {
+  border: 1px solid #ddd;
+  padding: 8px 10px;
+  vertical-align: top;
+}
+
+th {
+  position: sticky;
+  top: 0;
+  z-index: 5;
+  background: #f1f3f4;       /* ensure not transparent while sticky */
+  box-shadow: 0 1px 0 #ccc;  /* subtle divider under header */
+}
+
+tbody tr:nth-child(odd) {
+  background-color: #fafafa;
+}
+
+tbody tr:hover {
+  background-color: #eaf3ff;
+}
+
+/* ---------- Scrollable Table Wrapper (optional) ---------- */
+#output {
+  max-height: 80vh;
+  overflow: auto;            /* vertical + horizontal if needed */
+  border-radius: 8px;
+}
