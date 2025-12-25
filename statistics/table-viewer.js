@@ -68,6 +68,37 @@ const PlatformEnum = {
   2: "Windows"
 };
 
+const PracticeCategoriesEnum = {
+  0: "FlashCard",
+  1: "FullFlowSheetMusic",
+  2: "RealSongs"
+};
+
+const ViolinTypeEnum = {
+  0: "Traditional",
+  1: "Suzuki"
+};
+
+const ClarinetTypeEnum = {
+  0: "Bb",
+  1: "A"
+};
+
+const FrenchHornTypeEnum = {
+  0: "F",
+  1: "Bb"
+};
+
+const TrumpetTypeEnum = {
+  0: "C",
+  1: "Bb"
+};
+
+const TromboneTypeEnum = {
+  0: "Tenor",
+  1: "Bass"
+};
+
 // Flag-based enum for language (bitwise combination)
 const LangaugeRegionEnum = {
   1: "English",
@@ -92,7 +123,35 @@ function decodeLangFlags(value) {
   return result.length ? result.join(", ") : value;
 }
 
-function mapEnumValue(key, value) {
+function getInstrumentValue(row) {
+  if (!row || typeof row !== "object") return null;
+  for (const key of Object.keys(row)) {
+    if (key.toLowerCase() === "instrument") return row[key];
+  }
+  return null;
+}
+
+function mapInstrumentType(row, value) {
+  if (value == null) return "";
+
+  const instrument = getInstrumentValue(row);
+  switch (instrument) {
+    case 2:
+      return ViolinTypeEnum[value] ?? value;
+    case 6:
+      return ClarinetTypeEnum[value] ?? value;
+    case 8:
+      return FrenchHornTypeEnum[value] ?? value;
+    case 11:
+      return TrumpetTypeEnum[value] ?? value;
+    case 17:
+      return TromboneTypeEnum[value] ?? value;
+    default:
+      return value;
+  }
+}
+
+function mapEnumValue(key, value, row) {
   if (value == null) return "";
 
   const keyLower = key.toLowerCase();
@@ -102,6 +161,12 @@ function mapEnumValue(key, value) {
   }
   if (keyLower === "platform") {
     return PlatformEnum[value] ?? value;
+  }
+  if (keyLower === "practicecategory") {
+    return PracticeCategoriesEnum[value] ?? value;
+  }
+  if (keyLower === "instrumenttype") {
+    return mapInstrumentType(row, value);
   }
   if (keyLower === "language" || keyLower === "languageregion") {
     return decodeLangFlags(value);
@@ -205,7 +270,7 @@ function renderTable(rows) {
         }
         return `<tr>${
           cols.map(c => {
-            const mapped = mapEnumValue(c, obj[c]);
+            const mapped = mapEnumValue(c, obj[c], obj);
             return `<td>${escapeHtml(valueToString(mapped))}</td>`;
           }).join("")
         }</tr>`;
@@ -250,7 +315,7 @@ function sortIfNeeded(rows) {
 
   // Build decorated array to keep sorting stable
   const decorated = rows.map((row, idx) => {
-    const mapped = mapEnumValue(col, row?.[col]);
+    const mapped = mapEnumValue(col, row?.[col], row);
     const comp = toComparable(mapped);
     return { row, idx, comp };
   });
