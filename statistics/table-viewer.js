@@ -99,6 +99,13 @@ const TromboneTypeEnum = {
   1: "Bass"
 };
 
+const SaxophoneTypeEnum = {
+  0: "Alto",
+  1: "Tenor",
+  2: "Soprano",
+  3: "Baritone"
+};
+
 // Flag-based enum for language (bitwise combination)
 const LangaugeRegionEnum = {
   1: "English",
@@ -146,6 +153,8 @@ function mapInstrumentType(row, value) {
       return TrumpetTypeEnum[value] ?? value;
     case 17:
       return TromboneTypeEnum[value] ?? value;
+    case 16:
+      return SaxophoneTypeEnum[value] ?? value;
     default:
       return value;
   }
