@@ -1,9 +1,23 @@
 /* ---------- General Layout ---------- */
+* {
+  box-sizing: border-box;
+}
+
+html, body {
+  height: 100%;
+}
+
 body {
   font-family: "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-  margin: 32px;
+  margin: 0;
+  padding: 32px;
   background-color: #f9fafb;
   color: #222;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  min-height: 100vh;
+  overflow: hidden;
 }
 
 h1 {
@@ -14,7 +28,6 @@ h1 {
 .controls {
   display: grid;
   gap: 12px;
-  margin-bottom: 24px;
   max-width: 1000px;
 }
 
@@ -99,7 +112,8 @@ tbody tr:hover {
 
 /* ---------- Scrollable Table Wrapper (optional) ---------- */
 #output {
-  max-height: 80vh;
+  flex: 1 1 auto;
+  min-height: 0;
   overflow: auto;            /* vertical + horizontal if needed */
   border-radius: 8px;
 }
