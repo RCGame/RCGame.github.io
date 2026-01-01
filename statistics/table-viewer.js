@@ -4,6 +4,7 @@ const $ = (s) => document.querySelector(s);
 const urlInput = $("#urlInput");
 const statusEl = $("#status");
 const output = $("#output");
+const endpointRadios = document.querySelectorAll('input[name="endpoint"]');
 
 // AcrylicTouchableEnum mapping
 const AcrylicTouchableEnum = {
@@ -74,6 +75,12 @@ const PracticeCategoriesEnum = {
   2: "RealSongs"
 };
 
+const ToolsEnum = {
+  0: "InstrumentTuner",
+  1: "FullRangeTuner",
+  2: "Metronome"
+};
+
 const ViolinTypeEnum = {
   0: "Traditional",
   1: "Suzuki"
@@ -106,6 +113,17 @@ const SaxophoneTypeEnum = {
   3: "Baritone"
 };
 
+const BookEnum = {
+  0: "Book1",
+  1: "Book2"
+};
+
+const StaffSelectionEnum = {
+  0: "BothHands",
+  1: "LeftHand",
+  2: "RightHand"
+};
+
 // Flag-based enum for language (bitwise combination)
 const LangaugeRegionEnum = {
   1: "English",
@@ -129,6 +147,33 @@ function decodeLangFlags(value) {
     .map(([, name]) => name);
   return result.length ? result.join(", ") : value;
 }
+
+function extractQueryString(value) {
+  if (!value) return "";
+  const question = value.indexOf("?");
+  return question >= 0 ? value.slice(question) : "";
+}
+
+function setUrlFromBase(baseUrl) {
+  if (!baseUrl || !urlInput) return;
+  const query = extractQueryString(urlInput.value.trim());
+  urlInput.value = `${baseUrl}${query}`;
+}
+
+function syncEndpointRadios() {
+  if (!endpointRadios.length || !urlInput) return;
+  const base = urlInput.value.trim().split("?")[0];
+  endpointRadios.forEach((radio) => {
+    radio.checked = radio.value === base;
+  });
+}
+
+endpointRadios.forEach((radio) => {
+  radio.addEventListener("change", () => {
+    if (radio.checked) setUrlFromBase(radio.value);
+  });
+});
+syncEndpointRadios();
 
 function getInstrumentValue(row) {
   if (!row || typeof row !== "object") return null;
@@ -174,8 +219,17 @@ function mapEnumValue(key, value, row) {
   if (keyLower === "practicecategory") {
     return PracticeCategoriesEnum[value] ?? value;
   }
+  if (keyLower === "tool") {
+    return ToolsEnum[value] ?? value;
+  }
   if (keyLower === "instrumenttype") {
     return mapInstrumentType(row, value);
+  }
+  if (keyLower === "book") {
+    return BookEnum[value] ?? value;
+  }
+  if (keyLower === "staff" || keyLower === "staffselection") {
+    return StaffSelectionEnum[value] ?? value;
   }
   if (keyLower === "language" || keyLower === "languageregion") {
     return decodeLangFlags(value);
