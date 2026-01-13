@@ -8,6 +8,7 @@ const COLUMNS = [
   { key: "count", label: "ItemCount" },
   { key: "earliest", label: "EarliestDateTime" },
   { key: "latest", label: "LastDateTime" },
+  { key: "retentionDays", label: "RetentionDays" },
   { key: "maxLevel", label: "HighestLevel" },
   { key: "language", label: "Language" },
   { key: "topInstrument", label: "MostUsedInstrument" }
@@ -99,6 +100,7 @@ function buildRetentionRows(items) {
       earliestTs: null,
       latest: "",
       latestTs: null,
+      retentionDays: null,
       maxLevel: null,
       language: "",
       languageValue: null,
@@ -166,6 +168,10 @@ function buildRetentionRows(items) {
     groups.set(deviceId, group);
   }
 
+  for (const group of groups.values()) {
+    group.retentionDays = calculateRetentionDays(group.earliestTs, group.latestTs);
+  }
+
   return Array.from(groups.values());
 }
 
@@ -186,6 +192,15 @@ function decodeLangFlags(value) {
     .filter(([bit]) => (value & bit) !== 0)
     .map(([, name]) => name);
   return result.length ? result.join(", ") : value;
+}
+
+function calculateRetentionDays(earliestTs, latestTs) {
+  if (earliestTs == null || latestTs == null) return null;
+  const diff = latestTs - earliestTs;
+  if (!Number.isFinite(diff)) return null;
+  if (diff <= 0) return 0;
+  const msPerDay = 24 * 60 * 60 * 1000;
+  return Math.ceil(diff / msPerDay);
 }
 
 function normalizeEnumValue(value) {
