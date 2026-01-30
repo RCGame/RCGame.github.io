@@ -17,26 +17,26 @@ const AcrylicTouchableEnum = {
   6: "A Major",
   7: "E Major",
   8: "B Major",
-  9: "F♯ Major",
+  9: "F# Major",
   10: "F Major",
-  11: "B♭ Major",
-  12: "E♭ Major",
-  13: "A♭ Major",
-  14: "D♭ Major",
-  15: "G♭ Major",
+  11: "Bb Major",
+  12: "Eb Major",
+  13: "Ab Major",
+  14: "Db Major",
+  15: "Gb Major",
   16: "Natural",
   17: "Double Sharp",
   18: "Double Flat",
-  19: "♯ Accidental",
-  20: "♭ Accidental",
+  19: "Sharp Accidental",
+  20: "Flat Accidental",
   21: "Single Note",
   22: "Double Note",
   23: "Triple Note",
   24: "C Clef",
   25: "Alto Clef",
   26: "Tenor Clef",
-  27: "French Horn (New)",
-  28: "French Horn (Old)",
+  27: "French Horn Notation New",
+  28: "French Horn Notation Old",
   29: "Practice Mode: Pitch Only",
   30: "Practice Mode: Pitch & Rhythm"
 };
@@ -72,7 +72,73 @@ const PlatformEnum = {
 const PracticeCategoriesEnum = {
   0: "FlashCard",
   1: "FullFlowSheetMusic",
-  2: "RealSongs"
+  2: "RealSongs",
+  3: "MusicTheory"
+};
+
+const MusicTheoryCategoryEnum = {
+  0: "Scale",
+  1: "Chord",
+  2: "Rhythm"
+};
+
+const ScaleModeEnum = {
+  0: "Major",
+  1: "Minor"
+};
+
+const MinorScaleTypeEnum = {
+  0: "Harmonic",
+  1: "Melodic"
+};
+
+const ChordTypeEnum = {
+  0: "MajorTriad",
+  1: "MinorTriad",
+  2: "MajorSeventh",
+  3: "MinorSeventh",
+  4: "DominantSeventh",
+  5: "DiminishedSeventh"
+};
+
+const RhythmTypeSelectionEnum = {
+  0: "NoteTypes",
+  1: "TimeSignatures"
+};
+
+const RhythmNoteTypeEnum = {
+  0: "Semibreve",
+  1: "Minim",
+  2: "Crotchet",
+  3: "Quaver",
+  4: "Semiquaver",
+  5: "Rests",
+  6: "DottedNotes",
+  7: "Triplet"
+};
+
+const RhythmRestTypeEnum = {
+  0: "Whole",
+  1: "Half",
+  2: "Quarter",
+  3: "Eighth"
+};
+
+const DottedNoteTypeEnum = {
+  0: "Half",
+  1: "Quarter",
+  2: "Eighth"
+};
+
+const RhythmTimeSignatureEnum = {
+  0: "FourFour",
+  1: "TwoFour",
+  2: "ThreeFour",
+  3: "SixFour",
+  4: "ThreeEight",
+  5: "SixEight",
+  6: "NineEight",
+  7: "TwelveEight"
 };
 
 const ToolsEnum = {
@@ -219,6 +285,33 @@ function mapEnumValue(key, value, row) {
   if (keyLower === "practicecategory") {
     return PracticeCategoriesEnum[value] ?? value;
   }
+  if (keyLower === "musictheorycategory") {
+    return MusicTheoryCategoryEnum[value] ?? value;
+  }
+  if (keyLower === "scalemode") {
+    return ScaleModeEnum[value] ?? value;
+  }
+  if (keyLower === "minorscaletype") {
+    return MinorScaleTypeEnum[value] ?? value;
+  }
+  if (keyLower === "chordtype") {
+    return ChordTypeEnum[value] ?? value;
+  }
+  if (keyLower === "rhythmtypeselection") {
+    return RhythmTypeSelectionEnum[value] ?? value;
+  }
+  if (keyLower === "rhythmnotetype") {
+    return RhythmNoteTypeEnum[value] ?? value;
+  }
+  if (keyLower === "rhythmresttype") {
+    return RhythmRestTypeEnum[value] ?? value;
+  }
+  if (keyLower === "dottednotetype") {
+    return DottedNoteTypeEnum[value] ?? value;
+  }
+  if (keyLower === "rhythmtimesignature") {
+    return RhythmTimeSignatureEnum[value] ?? value;
+  }
   if (keyLower === "tool") {
     return ToolsEnum[value] ?? value;
   }
@@ -236,7 +329,7 @@ function mapEnumValue(key, value, row) {
   }
 
   // Apply AcrylicTouchableEnum for multiple fields
-  if (["clef", "key", "numberofnotes", "ccleftype"].includes(keyLower)) {
+  if (["clef", "key", "keysignature", "numberofnotes", "ccleftype"].includes(keyLower)) {
     return AcrylicTouchableEnum[value] ?? value;
   }
 
@@ -465,3 +558,4 @@ function corsHint(url) {
   } catch {}
   return "";
 }
+
