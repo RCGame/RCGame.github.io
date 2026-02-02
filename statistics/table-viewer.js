@@ -181,7 +181,8 @@ const SaxophoneTypeEnum = {
 
 const BookEnum = {
   0: "Book1",
-  1: "Book2"
+  1: "Book2",
+  2: "Book3"
 };
 
 const StaffSelectionEnum = {

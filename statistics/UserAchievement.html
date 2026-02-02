@@ -1,58 +1,46 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <title>Users Achievement</title>
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script> <!-- Chart.js CDN -->
-  <script src="UserAchievement.js" defer></script>
+  <meta charset="utf-8" />
+  <title>JSON URL → Table</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link rel="stylesheet" href="style.css" />
 </head>
 <body>
-  <h2>Users Achievement Chart</h2>
-  <div>
-    <div style="display: ruby;">
-      <label>Star: </label>
-      <div style="color:black; width: 30px; text-align: center; background-color: rgba(255, 99, 132, 0.5);">1</div>
-      <div style="color:black; width: 30px; text-align: center; background-color: rgba(65, 79, 241, 0.5);">2</div>
-      <div style="color:black; width: 30px; text-align: center; background-color: rgba(54, 162, 235, 0.5);">3</div>
-      <div style="color:black; width: 30px; text-align: center; background-color: rgba(239, 161, 5, 0.5);">4</div>
-      <div style="color:black; width: 30px; text-align: center; background-color: rgba(8, 241, 58, 0.5);">5</div>
+  <div class="controls">
+    <label>
+      JSON endpoint:
+      <input id="urlInput" type="url" value="https://rcgame.azurewebsites.net/api/GetLevelAchievementsD4j2Drb88fDaKfQb75P?from=2026-02-01" />
+    </label>
+    <fieldset class="endpoint-picker">
+      <legend>Endpoint</legend>
+      <label>
+        <input
+          type="radio"
+          name="endpoint"
+          value="https://rcgame.azurewebsites.net/api/GetLevelAchievementsD4j2Drb88fDaKfQb75P"
+          checked
+        />
+        Level Achievements
+      </label>
+      <label>
+        <input
+          type="radio"
+          name="endpoint"
+          value="https://rcgame.azurewebsites.net/api/GetToolUsagewErh4ddiRgghd4vGGHJSwd"
+        />
+        Tool Usage
+      </label>
+    </fieldset>
+    <div>
+      <button id="fetchBtn" type="button">Fetch & Render</button>
+      <button id="clearBtn" type="button">Clear</button>
     </div>
+    <div id="status" class="status"></div>
   </div>
-  <div style="margin-top:10px">
-    <div style="display: ruby;">
-      <label>Language: </label>
-      <div style="color:white; background-color: rgba(245, 69, 66, 1);">English</div>
-      <div style="background-color: rgba(245, 164, 66, 1);">Traditional Chinese</div>
-      <div style="background-color: rgba(245, 233, 66, 1);">Japanese</div>
-      <div style="background-color: rgba(72, 245, 66, 1);">Korean</div>
-      <div style="background-color: rgba(66, 176, 245, 1);">Simplified Chinese</div>
-      <div style="color:white; background-color: rgb(205, 8, 182);">German</div>
-      <div style="color:white; background-color: rgb(158, 126, 154);">Spanish</div>
-      <div style="color:white; background-color: rgb(28, 8, 205);">Portuguese</div>
-      <div style="color:black; background-color: rgb(208, 241, 213);">Dutch</div>
-    </div>
-  </div>
-  <div style="margin-top:10px">
-    <div style="display: ruby;">
-      <label>Instrument: </label>
-      <div style="background-color: rgb(173, 139, 132);">Piano</div>
-      <div style="background-color: rgb(129, 164, 105);">Violin</div>
-      <div style="color:black; background-color: rgb(233, 240, 230);">Viola</div>
-      <div style="color:white; background-color: rgb(16, 129, 160);">Cello</div>
-      <div style="color:black; background-color: rgb(241, 230, 3);">Guitar</div>
-      <div style="color:white; background-color: rgb(4, 78, 55);">Clarinet</div>
-      <div style="color:white; background-color: rgb(98, 63, 180);">Saxophone</div>
-      <div style="color:white; background-color: rgb(236, 102, 40);">Flute</div>
-      <div style="color:white; background-color: rgb(212, 154, 38);">Piccolo</div>
-    </div>
-  </div>
-  <div style="margin-top:10px">
-    <div style="display: ruby;">
-      <label>Screen Keyboard: </label>
-      <div style="color:white; background-color: rgb(76, 63, 77);">Yes</div>
-      <div style="color:white; background-color: rgb(188, 43, 14);">No</div>
-    </div>
-  </div>
-  <canvas id="myChart" width="400" height="160"></canvas>
+
+  <div id="output"></div>
+
+  <script src="table-viewer.js"></script>
 </body>
 </html>
