@@ -84,7 +84,8 @@ const MusicTheoryCategoryEnum = {
 
 const ScaleModeEnum = {
   0: "Major",
-  1: "Minor"
+  1: "Minor",
+  2: "Chromatic"
 };
 
 const MinorScaleTypeEnum = {
