@@ -2,6 +2,7 @@ const $ = (s) => document.querySelector(s);
 const urlInput = $("#urlInput");
 const statusEl = $("#status");
 const output = $("#output");
+const controlsEl = document.querySelector(".controls");
 const modeRadios = document.querySelectorAll('input[name="summaryMode"]');
 
 const InstrumentEnum = {
@@ -26,26 +27,27 @@ const InstrumentEnum = {
   18: "Tuba"
 };
 
-const COLUMN_CONFIG = {
-  users: [
-    { key: "instrument", label: "Instrument" },
-    { key: "count", label: "DeviceIdCount" }
-  ],
-  sessions: [
-    { key: "instrument", label: "Instrument" },
-    { key: "count", label: "ItemsCount" }
-  ]
+const MODE_META = {
+  users: {
+    countLabel: "DeviceIdCount",
+    yAxisLabel: "Unique DeviceIds"
+  },
+  sessions: {
+    countLabel: "ItemsCount",
+    yAxisLabel: "Total Items"
+  }
 };
 
 let RAW_ITEMS = [];
 let CURRENT_MODE = "users";
 let CURRENT_ROWS = [];
-let SORT_STATE = { col: "count", dir: "desc" };
+let chartInstance = null;
 
 $("#fetchBtn").addEventListener("click", fetchAndRender);
 $("#clearBtn").addEventListener("click", () => {
   RAW_ITEMS = [];
   CURRENT_ROWS = [];
+  destroyChart();
   output.innerHTML = "";
   statusEl.textContent = "";
 });
@@ -54,13 +56,18 @@ modeRadios.forEach((radio) => {
   radio.addEventListener("change", () => {
     if (!radio.checked) return;
     CURRENT_MODE = radio.value;
-    SORT_STATE = { col: "count", dir: "desc" };
     if (RAW_ITEMS.length) {
       CURRENT_ROWS = buildRows(RAW_ITEMS, CURRENT_MODE);
-      renderTable();
+      renderChart();
       setStatus(`Loaded ${RAW_ITEMS.length} item(s). Showing ${CURRENT_ROWS.length} instrument group(s).`);
     }
   });
+});
+
+window.addEventListener("resize", () => {
+  if (!chartInstance) return;
+  applyChartSizing(chartInstance.data.labels.length);
+  chartInstance.resize();
 });
 
 async function fetchAndRender() {
@@ -68,6 +75,7 @@ async function fetchAndRender() {
   if (!url) return;
 
   setStatus(`Fetching ${url} ...`);
+  destroyChart();
   output.innerHTML = "";
 
   try {
@@ -78,9 +86,8 @@ async function fetchAndRender() {
 
     RAW_ITEMS = data;
     CURRENT_MODE = getSelectedMode();
-    SORT_STATE = { col: "count", dir: "desc" };
     CURRENT_ROWS = buildRows(RAW_ITEMS, CURRENT_MODE);
-    renderTable();
+    renderChart();
     setStatus(`Loaded ${data.length} item(s). Showing ${CURRENT_ROWS.length} instrument group(s).`);
   } catch (e) {
     setError(`Error: ${e.message}. ${corsHint(url)}`);
@@ -189,118 +196,131 @@ function mapInstrumentValue(value) {
   return String(value);
 }
 
-function renderTable() {
+function renderChart() {
+  destroyChart();
+
   if (!CURRENT_ROWS.length) {
     output.innerHTML = "<p>No instrument usage data found.</p>";
     return;
   }
 
-  const columns = COLUMN_CONFIG[CURRENT_MODE] || COLUMN_CONFIG.users;
-  const rowsToDraw = sortRows(CURRENT_ROWS);
-
-  const thead = `
-    <thead>
-      <tr>
-        ${columns.map((col) => {
-          const isActive = SORT_STATE.col === col.key;
-          const indicator = isActive ? (SORT_STATE.dir === "desc" ? "v" : "^") : "";
-          const aria = isActive ? (SORT_STATE.dir === "desc" ? "descending" : "ascending") : "none";
-          return `<th class="sortable" data-col="${escapeHtml(col.key)}" aria-sort="${aria}">
-                    ${escapeHtml(col.label)}<span class="sort-indicator">${indicator}</span>
-                  </th>`;
-        }).join("")}
-      </tr>
-    </thead>`;
-
-  const tbody = `
-    <tbody>
-      ${rowsToDraw.map((row) => {
-        return `<tr>${columns.map((col) => `<td>${escapeHtml(valueToString(row[col.key]))}</td>`).join("")}</tr>`;
-      }).join("")}
-    </tbody>`;
-
-  output.innerHTML = `<table>${thead}${tbody}</table>`;
-  attachHeaderSortHandlers();
-}
-
-function attachHeaderSortHandlers() {
-  output.querySelectorAll("th.sortable").forEach((th) => {
-    th.addEventListener("click", () => {
-      const col = th.getAttribute("data-col");
-      if (SORT_STATE.col === col) {
-        SORT_STATE.dir = SORT_STATE.dir === "desc" ? "asc" : "desc";
-      } else {
-        SORT_STATE.col = col;
-        SORT_STATE.dir = "desc";
-      }
-      renderTable();
-    });
-  });
-}
-
-function sortRows(rows) {
-  if (!SORT_STATE.col || !SORT_STATE.dir) return rows.slice();
-  const col = SORT_STATE.col;
-  const dir = SORT_STATE.dir;
-
-  const decorated = rows.map((row, idx) => ({
-    row,
-    idx,
-    comp: toComparable(getSortValue(row, col))
-  }));
-
-  decorated.sort((a, b) => {
-    const res = compareValues(a.comp, b.comp);
-    if (res !== 0) return dir === "desc" ? -res : res;
-    return a.idx - b.idx;
-  });
-
-  return decorated.map((entry) => entry.row);
-}
-
-function getSortValue(row, col) {
-  if (col === "instrument") return row.instrumentValue ?? row.instrument;
-  return row[col];
-}
-
-function toComparable(v) {
-  if (v == null) return null;
-  if (typeof v === "number") return { t: "n", v };
-  if (typeof v === "string") {
-    const num = Number(v);
-    if (Number.isFinite(num) && /^[-+]?\d+(\.\d+)?$/.test(v.trim())) return { t: "n", v: num };
-    return { t: "s", v: v.toLowerCase() };
+  if (typeof Chart === "undefined") {
+    setError("Chart.js failed to load.");
+    return;
   }
-  return { t: "s", v: JSON.stringify(v).toLowerCase() };
+
+  const sortedRows = sortByPopularity(CURRENT_ROWS);
+  const modeMeta = MODE_META[CURRENT_MODE] || MODE_META.users;
+
+  output.innerHTML = `
+    <div class="chart-panel">
+      <div class="chart-canvas-wrap">
+        <canvas id="instrumentChart"></canvas>
+      </div>
+    </div>`;
+
+  const canvas = $("#instrumentChart");
+  applyChartSizing(sortedRows.length);
+
+  const labels = sortedRows.map((row) => row.instrument);
+  const data = sortedRows.map((row) => row.count);
+  const colors = labels.map((_, idx) => `hsl(${(idx * 37) % 360}, 70%, 55%)`);
+
+  chartInstance = new Chart(canvas, {
+    type: "bar",
+    data: {
+      labels,
+      datasets: [{
+        label: modeMeta.countLabel,
+        data,
+        backgroundColor: colors,
+        borderColor: colors,
+        borderWidth: 1
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      animation: false,
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          callbacks: {
+            label(context) {
+              return `${modeMeta.countLabel}: ${context.parsed.y}`;
+            }
+          }
+        }
+      },
+      scales: {
+        x: {
+          title: {
+            display: true,
+            text: "Instrument"
+          },
+          ticks: {
+            autoSkip: false,
+            maxRotation: 45,
+            minRotation: 0
+          }
+        },
+        y: {
+          beginAtZero: true,
+          ticks: {
+            precision: 0
+          },
+          title: {
+            display: true,
+            text: modeMeta.yAxisLabel
+          }
+        }
+      }
+    }
+  });
 }
 
-function compareValues(a, b) {
-  if (a == null && b == null) return 0;
-  if (a == null) return 1;
-  if (b == null) return -1;
+function applyChartSizing(barCount) {
+  const wrap = output.querySelector(".chart-canvas-wrap");
+  if (wrap) wrap.style.height = `${getChartHeightPx()}px`;
 
-  const order = { n: 2, s: 1 };
-  const ao = order[a.t] ?? 0;
-  const bo = order[b.t] ?? 0;
-  if (ao !== bo) return ao - bo;
+  const canvas = chartInstance ? chartInstance.canvas : $("#instrumentChart");
+  if (!canvas) return;
 
-  if (a.v < b.v) return -1;
-  if (a.v > b.v) return 1;
-  return 0;
+  const frameWidth = Math.max(320, output.clientWidth - 24);
+  const minWidth = Math.max(frameWidth, barCount * 72);
+  canvas.style.width = `${minWidth}px`;
 }
 
-function valueToString(v) {
-  if (v == null) return "";
-  return String(v);
+function getChartHeightPx() {
+  const viewportHeight = window.innerHeight;
+  const controlsHeight = controlsEl ? controlsEl.getBoundingClientRect().height : 0;
+  const bodyStyle = getComputedStyle(document.body);
+  const bodyGap = Number.parseFloat(bodyStyle.gap) || 0;
+  const paddingTop = Number.parseFloat(bodyStyle.paddingTop) || 0;
+  const paddingBottom = Number.parseFloat(bodyStyle.paddingBottom) || 0;
+
+  const remaining = viewportHeight - controlsHeight - bodyGap - paddingTop - paddingBottom - 8;
+  const targetPercent = Math.floor(viewportHeight * 0.62);
+  const available = Math.max(0, Math.floor(remaining));
+  return Math.min(available, targetPercent);
 }
 
-function escapeHtml(s) {
-  return String(s)
-    .replaceAll("&", "&amp;")
-    .replaceAll("<", "&lt;")
-    .replaceAll(">", "&gt;")
-    .replaceAll('"', "&quot;")
-    .replaceAll("'", "&#39;");
+function sortByPopularity(rows) {
+  return rows.slice().sort((a, b) => {
+    if (b.count !== a.count) return b.count - a.count;
+    const left = String(a.instrument || "").toLowerCase();
+    const right = String(b.instrument || "").toLowerCase();
+    if (left < right) return -1;
+    if (left > right) return 1;
+    return 0;
+  });
+}
+
+function destroyChart() {
+  if (chartInstance) {
+    chartInstance.destroy();
+    chartInstance = null;
+  }
 }
 
 function setStatus(msg) {

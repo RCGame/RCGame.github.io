@@ -140,5 +140,31 @@ tbody tr:hover {
   border-radius: 8px;
 }
 
+.chart-panel {
+  background: #fff;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  padding: 12px;
+  min-height: 320px;
+}
+
+.chart-canvas-wrap {
+  position: relative;
+  height: 100%;
+  min-height: 290px;
+}
+
+.instrument-page #output {
+  overflow-y: hidden;
+}
+
+.instrument-page .chart-panel {
+  min-height: 0;
+}
+
+.instrument-page .chart-canvas-wrap {
+  min-height: 0;
+}
+
 th.sortable { cursor: pointer; user-select: none; }
 th .sort-indicator { margin-left: 6px; opacity: 0.6; font-size: 0.85em; }
