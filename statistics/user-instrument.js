@@ -260,7 +260,7 @@ function renderChart() {
           },
           ticks: {
             autoSkip: false,
-            maxRotation: 45,
+            maxRotation: 0,
             minRotation: 0
           }
         },
