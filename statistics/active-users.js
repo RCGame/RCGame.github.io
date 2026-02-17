@@ -80,7 +80,7 @@ function buildWeeklyActiveRows(items) {
         indexFromEnd,
         startTs,
         endTs,
-        label: `${formatDate(startTs)} - ${formatDate(endTs)}`,
+        label: formatIntervalLabel(startTs, endTs),
         devices: new Set()
       };
       weekMap.set(indexFromEnd, bucket);
@@ -104,7 +104,7 @@ function buildWeeklyActiveRows(items) {
     const endTs = maxTs - indexFromEnd * WEEK_MS;
     const startTs = endTs - WEEK_MS + 1;
     rows.push({
-      label: `${formatDate(startTs)} - ${formatDate(endTs)}`,
+      label: formatIntervalLabel(startTs, endTs),
       count: 0
     });
   }
@@ -250,6 +250,10 @@ function formatDate(ts) {
   const mm = String(d.getUTCMonth() + 1).padStart(2, "0");
   const dd = String(d.getUTCDate()).padStart(2, "0");
   return `${yyyy}-${mm}-${dd}`;
+}
+
+function formatIntervalLabel(startTs, endTs) {
+  return [formatDate(startTs), "-", formatDate(endTs)];
 }
 
 function destroyChart() {
