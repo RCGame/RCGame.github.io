@@ -166,5 +166,17 @@ tbody tr:hover {
   min-height: 0;
 }
 
+.active-users-page #output {
+  overflow-y: hidden;
+}
+
+.active-users-page .chart-panel {
+  min-height: 0;
+}
+
+.active-users-page .chart-canvas-wrap {
+  min-height: 0;
+}
+
 th.sortable { cursor: pointer; user-select: none; }
 th .sort-indicator { margin-left: 6px; opacity: 0.6; font-size: 0.85em; }
