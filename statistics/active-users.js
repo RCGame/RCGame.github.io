@@ -62,34 +62,56 @@ function buildWeeklyActiveRows(items) {
   if (!parsed.length) return [];
 
   let minTs = parsed[0].ts;
+  let maxTs = parsed[0].ts;
   for (let i = 1; i < parsed.length; i++) {
     if (parsed[i].ts < minTs) minTs = parsed[i].ts;
+    if (parsed[i].ts > maxTs) maxTs = parsed[i].ts;
   }
 
   const weekMap = new Map();
   for (const entry of parsed) {
-    const index = Math.floor((entry.ts - minTs) / WEEK_MS);
-    let bucket = weekMap.get(index);
+    // Backward bucketing: index 0 is always the latest 7-day window.
+    const indexFromEnd = Math.floor((maxTs - entry.ts) / WEEK_MS);
+    let bucket = weekMap.get(indexFromEnd);
     if (!bucket) {
-      const startTs = minTs + index * WEEK_MS;
-      const endTs = startTs + WEEK_MS - 1;
+      const endTs = maxTs - indexFromEnd * WEEK_MS;
+      const startTs = endTs - WEEK_MS + 1;
       bucket = {
-        index,
+        indexFromEnd,
         startTs,
         endTs,
         label: `${formatDate(startTs)} - ${formatDate(endTs)}`,
         devices: new Set()
       };
-      weekMap.set(index, bucket);
+      weekMap.set(indexFromEnd, bucket);
     }
     bucket.devices.add(entry.deviceId);
   }
 
-  return Array.from(weekMap.values())
-    .sort((a, b) => a.index - b.index)
-    .map((bucket) => ({
+  const maxIndexFromEnd = Math.floor((maxTs - minTs) / WEEK_MS);
+  const rows = [];
+  for (let indexFromEnd = maxIndexFromEnd; indexFromEnd >= 0; indexFromEnd--) {
+    const existing = weekMap.get(indexFromEnd);
+    if (existing) {
+      rows.push({
+        label: existing.label,
+        count: existing.devices.size
+      });
+      continue;
+    }
+
+    // Keep continuous intervals even when a week has zero active users.
+    const endTs = maxTs - indexFromEnd * WEEK_MS;
+    const startTs = endTs - WEEK_MS + 1;
+    rows.push({
+      label: `${formatDate(startTs)} - ${formatDate(endTs)}`,
+      count: 0
+    });
+  }
+
+  return rows.map((bucket) => ({
       label: bucket.label,
-      count: bucket.devices.size
+      count: bucket.count
     }));
 }
 
