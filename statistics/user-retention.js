@@ -36,17 +36,8 @@ const InstrumentEnum = {
   18: "Tuba"
 };
 
-const LangaugeRegionEnum = {
-  1: "English",
-  2: "Traditional Chinese",
-  4: "Japanese",
-  8: "Korean",
-  16: "Simplified Chinese",
-  32: "Spanish",
-  64: "German",
-  128: "Portuguese",
-  256: "Dutch"
-};
+const LangaugeRegionEnum =
+  (window.SharedEnums && window.SharedEnums.LangaugeRegionEnum) || {};
 
 let SORT_STATE = { col: "count", dir: "desc" };
 let CURRENT_ROWS = [];
