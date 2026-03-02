@@ -41,6 +41,23 @@
 
   <div id="output"></div>
 
+  <script>
+    (function setDefaultFromToYesterday() {
+      const urlInput = document.getElementById("urlInput");
+      if (!urlInput) return;
+
+      try {
+        const url = new URL(urlInput.value);
+        const yesterday = new Date();
+        yesterday.setDate(yesterday.getDate() - 1);
+        const yyyy = yesterday.getFullYear();
+        const mm = String(yesterday.getMonth() + 1).padStart(2, "0");
+        const dd = String(yesterday.getDate()).padStart(2, "0");
+        url.searchParams.set("from", `${yyyy}-${mm}-${dd}`);
+        urlInput.value = url.toString();
+      } catch {}
+    })();
+  </script>
   <script src="table-viewer.js"></script>
 </body>
 </html>
