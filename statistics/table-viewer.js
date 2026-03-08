@@ -183,13 +183,20 @@ const SaxophoneTypeEnum = {
 const BookEnum = {
   0: "Book1",
   1: "Book2",
-  2: "Book3"
+  2: "Book3",
+  3: "Book4"
 };
 
 const StaffSelectionEnum = {
   0: "BothHands",
   1: "LeftHand",
   2: "RightHand"
+};
+
+const SongOrganisationModeEnum = {
+  0: "Albums",
+  1: "Composers",
+  2: "Grades"
 };
 
 // Flag-based enum for language (bitwise combination)
@@ -316,6 +323,9 @@ function mapEnumValue(key, value, row) {
   }
   if (keyLower === "staff" || keyLower === "staffselection") {
     return StaffSelectionEnum[value] ?? value;
+  }
+  if (keyLower === "searchby") {
+    return SongOrganisationModeEnum[value] ?? value;
   }
   if (keyLower === "language" || keyLower === "languageregion") {
     return decodeLangFlags(value);
