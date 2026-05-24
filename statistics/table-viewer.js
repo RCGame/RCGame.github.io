@@ -184,7 +184,14 @@ const BookEnum = {
   0: "Book1",
   1: "Book2",
   2: "Book3",
-  3: "Book4"
+  3: "Book4",
+  4: "Book5",
+  5: "Book6",
+  6: "Book7",
+  7: "Book8",
+  8: "Book9",
+  9: "Book10",
+  10: "Book11"
 };
 
 const StaffSelectionEnum = {
