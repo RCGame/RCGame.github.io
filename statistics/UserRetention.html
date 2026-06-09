@@ -12,6 +12,17 @@
       JSON endpoint:
       <input id="urlInput" type="url" value="https://rcgame.azurewebsites.net/api/GetLevelAchievementsD4j2Drb88fDaKfQb75P?from=2025-12-01" />
     </label>
+    <fieldset class="endpoint-picker">
+      <legend>View</legend>
+      <label>
+        <input type="radio" name="retentionView" value="list" checked />
+        User List
+      </label>
+      <label>
+        <input type="radio" name="retentionView" value="milestones" />
+        Retention Milestones
+      </label>
+    </fieldset>
     <div>
       <button id="fetchBtn" type="button">Fetch & Render</button>
       <button id="clearBtn" type="button">Clear</button>
@@ -22,6 +33,7 @@
   <div id="output"></div>
 
   <script src="shared-enums.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
   <script src="user-retention.js"></script>
 </body>
 </html>

@@ -2,6 +2,8 @@ const $ = (s) => document.querySelector(s);
 const urlInput = $("#urlInput");
 const statusEl = $("#status");
 const output = $("#output");
+const controlsEl = document.querySelector(".controls");
+const viewRadios = document.querySelectorAll('input[name="retentionView"]');
 
 const COLUMNS = [
   { key: "deviceId", label: "DeviceId" },
@@ -41,11 +43,33 @@ const LangaugeRegionEnum =
 
 let SORT_STATE = { col: "count", dir: "desc" };
 let CURRENT_ROWS = [];
+let CURRENT_ITEM_COUNT = 0;
+let CURRENT_VIEW = "list";
+let chartInstance = null;
 
 $("#fetchBtn").addEventListener("click", fetchAndRender);
 $("#clearBtn").addEventListener("click", () => {
+  CURRENT_ROWS = [];
+  CURRENT_ITEM_COUNT = 0;
+  destroyChart();
   output.innerHTML = "";
   statusEl.textContent = "";
+});
+
+viewRadios.forEach((radio) => {
+  radio.addEventListener("change", () => {
+    if (!radio.checked) return;
+    CURRENT_VIEW = radio.value;
+    if (CURRENT_ROWS.length) {
+      if (renderSelectedView()) setLoadedStatus();
+    }
+  });
+});
+
+window.addEventListener("resize", () => {
+  if (!chartInstance) return;
+  applyChartSizing(chartInstance.data.labels.length);
+  chartInstance.resize();
 });
 
 async function fetchAndRender() {
@@ -53,6 +77,7 @@ async function fetchAndRender() {
   if (!url) return;
 
   setStatus(`Fetching ${url} ...`);
+  destroyChart();
   output.innerHTML = "";
 
   try {
@@ -61,13 +86,26 @@ async function fetchAndRender() {
     const data = await resp.json();
     if (!Array.isArray(data)) throw new Error("Response is not a JSON array.");
 
+    CURRENT_ITEM_COUNT = data.length;
     CURRENT_ROWS = buildRetentionRows(data);
+    CURRENT_VIEW = getSelectedView();
     SORT_STATE = { col: "count", dir: "desc" };
-    renderTable(CURRENT_ROWS);
-    setStatus(`Loaded ${data.length} item(s). ${CURRENT_ROWS.length} device(s).`);
+    if (renderSelectedView()) setLoadedStatus();
   } catch (e) {
     setError(`Error: ${e.message}. ${corsHint(url)}`);
   }
+}
+
+function getSelectedView() {
+  const selected = Array.from(viewRadios).find((radio) => radio.checked);
+  return selected ? selected.value : "list";
+}
+
+function renderSelectedView() {
+  if (CURRENT_VIEW === "milestones") {
+    return renderRetentionMilestonesChart(CURRENT_ROWS);
+  }
+  return renderTable(CURRENT_ROWS);
 }
 
 function buildRetentionRows(items) {
@@ -277,9 +315,11 @@ function toNumber(value) {
 }
 
 function renderTable(rows) {
+  destroyChart();
+
   if (!rows.length) {
     output.innerHTML = "<p>No retention data found.</p>";
-    return;
+    return true;
   }
 
   const rowsToDraw = sortIfNeeded(rows);
@@ -311,6 +351,7 @@ function renderTable(rows) {
 
   const head = output.querySelector("thead");
   attachHeaderSortHandlers(head);
+  return true;
 }
 
 function attachHeaderSortHandlers(theadEl) {
@@ -323,9 +364,158 @@ function attachHeaderSortHandlers(theadEl) {
         SORT_STATE.col = col;
         SORT_STATE.dir = "desc";
       }
-      renderTable(CURRENT_ROWS);
+      renderSelectedView();
     });
   });
+}
+
+function renderRetentionMilestonesChart(rows) {
+  destroyChart();
+
+  if (!rows.length) {
+    output.innerHTML = "<p>No retention data found.</p>";
+    return true;
+  }
+
+  if (typeof Chart === "undefined") {
+    setError("Chart.js failed to load.");
+    return false;
+  }
+
+  const buckets = buildRetentionMilestoneBuckets(rows);
+  if (!buckets.length) {
+    output.innerHTML = "<p>No users have RetentionDays of at least 30.</p>";
+    return true;
+  }
+
+  output.innerHTML = `
+    <div class="chart-panel">
+      <div class="chart-canvas-wrap">
+        <canvas id="retentionMilestonesChart"></canvas>
+      </div>
+    </div>`;
+
+  const canvas = $("#retentionMilestonesChart");
+  applyChartSizing(buckets.length);
+  const yAxisMax = getPercentageAxisMax(buckets);
+
+  chartInstance = new Chart(canvas, {
+    type: "bar",
+    data: {
+      labels: buckets.map((bucket) => `>= ${bucket.threshold} days`),
+      datasets: [{
+        label: "Users",
+        data: buckets.map((bucket) => bucket.percent),
+        backgroundColor: "#1f77d0",
+        borderColor: "#1f77d0",
+        borderWidth: 1,
+        counts: buckets.map((bucket) => bucket.count)
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      animation: false,
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          callbacks: {
+            label(context) {
+              const count = context.dataset.counts[context.dataIndex];
+              return `${context.parsed.y.toFixed(1)}% (${count} of ${rows.length} users)`;
+            }
+          }
+        }
+      },
+      scales: {
+        x: {
+          title: {
+            display: true,
+            text: "RetentionDays Threshold"
+          },
+          ticks: {
+            autoSkip: false,
+            maxRotation: 0,
+            minRotation: 0
+          }
+        },
+        y: {
+          beginAtZero: true,
+          max: yAxisMax,
+          ticks: {
+            callback(value) {
+              return `${value}%`;
+            }
+          },
+          title: {
+            display: true,
+            text: "Users Meeting Threshold"
+          }
+        }
+      }
+    }
+  });
+
+  return true;
+}
+
+function getPercentageAxisMax(buckets) {
+  const highestPercent = buckets.reduce((max, bucket) => Math.max(max, bucket.percent), 0);
+  return Math.min(100, Math.max(10, Math.ceil(highestPercent / 10) * 10));
+}
+
+function buildRetentionMilestoneBuckets(rows) {
+  const buckets = [];
+
+  for (let threshold = 30; ; threshold += 30) {
+    const count = rows.filter((row) => {
+      const days = toNumber(row.retentionDays);
+      return days != null && days >= threshold;
+    }).length;
+
+    if (count === 0) break;
+
+    buckets.push({
+      threshold,
+      count,
+      percent: rows.length ? (count / rows.length) * 100 : 0
+    });
+  }
+
+  return buckets;
+}
+
+function applyChartSizing(barCount) {
+  const wrap = output.querySelector(".chart-canvas-wrap");
+  if (wrap) wrap.style.height = `${getChartHeightPx()}px`;
+
+  const canvas = chartInstance ? chartInstance.canvas : $("#retentionMilestonesChart");
+  if (!canvas) return;
+
+  const frameWidth = Math.max(320, output.clientWidth - 24);
+  const minWidth = Math.max(frameWidth, barCount * 120);
+  canvas.style.width = `${minWidth}px`;
+}
+
+function getChartHeightPx() {
+  const viewportHeight = window.innerHeight;
+  const controlsHeight = controlsEl ? controlsEl.getBoundingClientRect().height : 0;
+  const bodyStyle = getComputedStyle(document.body);
+  const bodyGap = Number.parseFloat(bodyStyle.gap) || 0;
+  const paddingTop = Number.parseFloat(bodyStyle.paddingTop) || 0;
+  const paddingBottom = Number.parseFloat(bodyStyle.paddingBottom) || 0;
+
+  const remaining = viewportHeight - controlsHeight - bodyGap - paddingTop - paddingBottom - 8;
+  const targetPercent = Math.floor(viewportHeight * 0.62);
+  const available = Math.max(0, Math.floor(remaining));
+  return Math.min(available, targetPercent);
+}
+
+function destroyChart() {
+  if (chartInstance) {
+    chartInstance.destroy();
+    chartInstance = null;
+  }
 }
 
 function sortIfNeeded(rows) {
@@ -405,6 +595,11 @@ function escapeHtml(s) {
 function setStatus(msg) {
   statusEl.textContent = msg;
   statusEl.className = "status";
+}
+
+function setLoadedStatus() {
+  const suffix = CURRENT_VIEW === "milestones" ? "retention milestone chart" : "user list";
+  setStatus(`Loaded ${CURRENT_ITEM_COUNT} item(s). ${CURRENT_ROWS.length} device(s). Showing ${suffix}.`);
 }
 
 function setError(msg) {
