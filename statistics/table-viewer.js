@@ -206,6 +206,11 @@ const SongOrganisationModeEnum = {
   2: "Grades"
 };
 
+const HintTypeEnum = {
+  0: "Fingerboard",
+  1: "Intonation"
+};
+
 // Flag-based enum for language (bitwise combination)
 const LangaugeRegionEnum =
   (window.SharedEnums && window.SharedEnums.LangaugeRegionEnum) || {};
@@ -333,6 +338,9 @@ function mapEnumValue(key, value, row) {
   }
   if (keyLower === "searchby") {
     return SongOrganisationModeEnum[value] ?? value;
+  }
+  if (keyLower === "hinttype") {
+    return HintTypeEnum[value] ?? value;
   }
   if (keyLower === "language" || keyLower === "languageregion") {
     return decodeLangFlags(value);
