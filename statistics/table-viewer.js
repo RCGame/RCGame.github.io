@@ -211,6 +211,12 @@ const HintTypeEnum = {
   1: "Intonation"
 };
 
+const PitchPrecisionLevelEnum = {
+  0: "Low",
+  1: "Medium",
+  2: "High"
+};
+
 // Flag-based enum for language (bitwise combination)
 const LangaugeRegionEnum =
   (window.SharedEnums && window.SharedEnums.LangaugeRegionEnum) || {};
@@ -341,6 +347,9 @@ function mapEnumValue(key, value, row) {
   }
   if (keyLower === "hinttype") {
     return HintTypeEnum[value] ?? value;
+  }
+  if (keyLower === "pitchprecisionlevel") {
+    return PitchPrecisionLevelEnum[value] ?? value;
   }
   if (keyLower === "language" || keyLower === "languageregion") {
     return decodeLangFlags(value);
