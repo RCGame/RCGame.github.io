@@ -3,17 +3,34 @@ const urlInput = $("#urlInput");
 const statusEl = $("#status");
 const output = $("#output");
 const controlsEl = document.querySelector(".controls");
+const intervalRadios = document.querySelectorAll('input[name="interval"]');
 
-const WEEK_MS = 7 * 24 * 60 * 60 * 1000;
+const DAY_MS = 24 * 60 * 60 * 1000;
 
 let chartInstance = null;
+let lastItems = null;
 
 $("#fetchBtn").addEventListener("click", fetchAndRender);
 $("#clearBtn").addEventListener("click", () => {
   destroyChart();
   output.innerHTML = "";
   statusEl.textContent = "";
+  lastItems = null;
 });
+
+intervalRadios.forEach((radio) => {
+  radio.addEventListener("change", () => {
+    if (!lastItems) return;
+    const rows = buildActiveRows(lastItems, getIntervalDays());
+    renderChart(rows);
+    setStatus(`Loaded ${lastItems.length} item(s). Showing ${rows.length} interval bucket(s).`);
+  });
+});
+
+function getIntervalDays() {
+  const checked = document.querySelector('input[name="interval"]:checked');
+  return checked ? Number(checked.value) : 7;
+}
 
 window.addEventListener("resize", () => {
   if (!chartInstance) return;
@@ -35,15 +52,17 @@ async function fetchAndRender() {
     const data = await resp.json();
     if (!Array.isArray(data)) throw new Error("Response is not a JSON array.");
 
-    const weeklyRows = buildWeeklyActiveRows(data);
-    renderChart(weeklyRows);
-    setStatus(`Loaded ${data.length} item(s). Showing ${weeklyRows.length} week bucket(s).`);
+    lastItems = data;
+    const rows = buildActiveRows(lastItems, getIntervalDays());
+    renderChart(rows);
+    setStatus(`Loaded ${data.length} item(s). Showing ${rows.length} interval bucket(s).`);
   } catch (e) {
     setError(`Error: ${e.message}. ${corsHint(url)}`);
   }
 }
 
-function buildWeeklyActiveRows(items) {
+function buildActiveRows(items, intervalDays) {
+  const intervalMs = intervalDays * DAY_MS;
   const deviceKey = findKey(items, ["deviceid"]);
   const dateKey = findKey(items, ["datetime"]);
   if (!deviceKey || !dateKey) return [];
@@ -68,14 +87,14 @@ function buildWeeklyActiveRows(items) {
     if (parsed[i].ts > maxTs) maxTs = parsed[i].ts;
   }
 
-  const weekMap = new Map();
+  const bucketMap = new Map();
   for (const entry of parsed) {
-    // Backward bucketing: index 0 is always the latest 7-day window.
-    const indexFromEnd = Math.floor((maxTs - entry.ts) / WEEK_MS);
-    let bucket = weekMap.get(indexFromEnd);
+    // Backward bucketing: index 0 is always the latest interval window.
+    const indexFromEnd = Math.floor((maxTs - entry.ts) / intervalMs);
+    let bucket = bucketMap.get(indexFromEnd);
     if (!bucket) {
-      const endTs = maxTs - indexFromEnd * WEEK_MS;
-      const startTs = endTs - WEEK_MS + 1;
+      const endTs = maxTs - indexFromEnd * intervalMs;
+      const startTs = endTs - intervalMs + 1;
       bucket = {
         indexFromEnd,
         startTs,
@@ -83,15 +102,15 @@ function buildWeeklyActiveRows(items) {
         label: formatIntervalLabel(startTs, endTs),
         devices: new Set()
       };
-      weekMap.set(indexFromEnd, bucket);
+      bucketMap.set(indexFromEnd, bucket);
     }
     bucket.devices.add(entry.deviceId);
   }
 
-  const maxIndexFromEnd = Math.floor((maxTs - minTs) / WEEK_MS);
+  const maxIndexFromEnd = Math.floor((maxTs - minTs) / intervalMs);
   const rows = [];
   for (let indexFromEnd = maxIndexFromEnd; indexFromEnd >= 0; indexFromEnd--) {
-    const existing = weekMap.get(indexFromEnd);
+    const existing = bucketMap.get(indexFromEnd);
     if (existing) {
       rows.push({
         label: existing.label,
@@ -100,9 +119,9 @@ function buildWeeklyActiveRows(items) {
       continue;
     }
 
-    // Keep continuous intervals even when a week has zero active users.
-    const endTs = maxTs - indexFromEnd * WEEK_MS;
-    const startTs = endTs - WEEK_MS + 1;
+    // Keep continuous intervals even when a bucket has zero active users.
+    const endTs = maxTs - indexFromEnd * intervalMs;
+    const startTs = endTs - intervalMs + 1;
     rows.push({
       label: formatIntervalLabel(startTs, endTs),
       count: 0
@@ -135,13 +154,14 @@ function renderChart(rows) {
 
   const canvas = $("#activeUsersChart");
   applyChartSizing(rows.length);
+  const intervalDays = getIntervalDays();
 
   chartInstance = new Chart(canvas, {
     type: "bar",
     data: {
       labels: rows.map((r) => r.label),
       datasets: [{
-        label: "Weekly Active Users",
+        label: `${intervalDays}-Day Active Users`,
         data: rows.map((r) => r.count),
         backgroundColor: "#1f77d0",
         borderColor: "#1f77d0",
@@ -166,7 +186,7 @@ function renderChart(rows) {
         x: {
           title: {
             display: true,
-            text: "7-Day Interval"
+            text: `${intervalDays}-Day Interval`
           },
           ticks: {
             autoSkip: false,

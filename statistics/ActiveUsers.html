@@ -10,8 +10,19 @@
   <div class="controls">
     <label>
       JSON endpoint:
-      <input id="urlInput" type="url" value="https://rcgame.azurewebsites.net/api/GetLevelAchievementsD4j2Drb88fDaKfQb75P?from=2026-05-01" />
+      <input id="urlInput" type="url" value="https://rcgame.azurewebsites.net/api/GetLevelAchievementsD4j2Drb88fDaKfQb75P?from=2025-12-01" />
     </label>
+    <fieldset class="endpoint-picker">
+      <legend>Group by</legend>
+      <label>
+        <input type="radio" name="interval" id="interval7" value="7" checked />
+        7 Days
+      </label>
+      <label>
+        <input type="radio" name="interval" id="interval28" value="28" />
+        28 Days
+      </label>
+    </fieldset>
     <div>
       <button id="fetchBtn" type="button">Fetch & Render</button>
       <button id="clearBtn" type="button">Clear</button>
