@@ -4,6 +4,8 @@ const statusEl = $("#status");
 const output = $("#output");
 const controlsEl = document.querySelector(".controls");
 const viewRadios = document.querySelectorAll('input[name="retentionView"]');
+const milestoneStepPicker = $("#milestoneStepPicker");
+const milestoneStepRadios = document.querySelectorAll('input[name="milestoneStep"]');
 
 const COLUMNS = [
   { key: "deviceId", label: "DeviceId" },
@@ -60,11 +62,34 @@ viewRadios.forEach((radio) => {
   radio.addEventListener("change", () => {
     if (!radio.checked) return;
     CURRENT_VIEW = radio.value;
+    updateMilestoneStepVisibility();
     if (CURRENT_ROWS.length) {
       if (renderSelectedView()) setLoadedStatus();
     }
   });
 });
+
+milestoneStepRadios.forEach((radio) => {
+  radio.addEventListener("change", () => {
+    if (!radio.checked) return;
+    if (CURRENT_VIEW !== "milestones" || !CURRENT_ROWS.length) return;
+    if (renderSelectedView()) setLoadedStatus();
+  });
+});
+
+// Browsers can restore a previously checked radio on reload, so sync from the DOM.
+CURRENT_VIEW = getSelectedView();
+updateMilestoneStepVisibility();
+
+function updateMilestoneStepVisibility() {
+  if (milestoneStepPicker) milestoneStepPicker.disabled = CURRENT_VIEW !== "milestones";
+}
+
+function getMilestoneStep() {
+  const selected = Array.from(milestoneStepRadios).find((radio) => radio.checked);
+  const step = selected ? Number(selected.value) : 30;
+  return Number.isFinite(step) && step > 0 ? step : 30;
+}
 
 window.addEventListener("resize", () => {
   if (!chartInstance) return;
@@ -89,6 +114,7 @@ async function fetchAndRender() {
     CURRENT_ITEM_COUNT = data.length;
     CURRENT_ROWS = buildRetentionRows(data);
     CURRENT_VIEW = getSelectedView();
+    updateMilestoneStepVisibility();
     SORT_STATE = { col: "count", dir: "desc" };
     if (renderSelectedView()) setLoadedStatus();
   } catch (e) {
@@ -382,9 +408,10 @@ function renderRetentionMilestonesChart(rows) {
     return false;
   }
 
-  const buckets = buildRetentionMilestoneBuckets(rows);
+  const step = getMilestoneStep();
+  const buckets = buildRetentionMilestoneBuckets(rows, step);
   if (!buckets.length) {
-    output.innerHTML = "<p>No users have RetentionDays of at least 30.</p>";
+    output.innerHTML = `<p>No users have RetentionDays of at least ${step}.</p>`;
     return true;
   }
 
@@ -431,7 +458,7 @@ function renderRetentionMilestonesChart(rows) {
         x: {
           title: {
             display: true,
-            text: "RetentionDays Threshold"
+            text: `RetentionDays Threshold (${step}-day steps)`
           },
           ticks: {
             autoSkip: false,
@@ -464,10 +491,10 @@ function getPercentageAxisMax(buckets) {
   return Math.min(100, Math.max(10, Math.ceil(highestPercent / 10) * 10));
 }
 
-function buildRetentionMilestoneBuckets(rows) {
+function buildRetentionMilestoneBuckets(rows, step) {
   const buckets = [];
 
-  for (let threshold = 30; ; threshold += 30) {
+  for (let threshold = step; ; threshold += step) {
     const count = rows.filter((row) => {
       const days = toNumber(row.retentionDays);
       return days != null && days >= threshold;
@@ -598,7 +625,9 @@ function setStatus(msg) {
 }
 
 function setLoadedStatus() {
-  const suffix = CURRENT_VIEW === "milestones" ? "retention milestone chart" : "user list";
+  const suffix = CURRENT_VIEW === "milestones"
+    ? `retention milestone chart (${getMilestoneStep()}-day steps)`
+    : "user list";
   setStatus(`Loaded ${CURRENT_ITEM_COUNT} item(s). ${CURRENT_ROWS.length} device(s). Showing ${suffix}.`);
 }
 

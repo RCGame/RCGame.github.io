@@ -23,6 +23,21 @@
         Retention Milestones
       </label>
     </fieldset>
+    <fieldset class="endpoint-picker" id="milestoneStepPicker" disabled>
+      <legend>Milestone interval</legend>
+      <label>
+        <input type="radio" name="milestoneStep" value="7" />
+        7x Days
+      </label>
+      <label>
+        <input type="radio" name="milestoneStep" value="14" />
+        14x Days
+      </label>
+      <label>
+        <input type="radio" name="milestoneStep" value="30" checked />
+        30x Days
+      </label>
+    </fieldset>
     <div>
       <button id="fetchBtn" type="button">Fetch & Render</button>
       <button id="clearBtn" type="button">Clear</button>
