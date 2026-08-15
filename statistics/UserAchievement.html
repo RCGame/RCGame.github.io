@@ -12,26 +12,37 @@
       JSON endpoint:
       <input id="urlInput" type="url" value="https://rcgame.azurewebsites.net/api/GetLevelAchievementsD4j2Drb88fDaKfQb75P?from=2026-02-01" />
     </label>
-    <fieldset class="endpoint-picker">
-      <legend>Endpoint</legend>
-      <label>
+    <div class="controls-row">
+      <fieldset class="endpoint-picker">
+        <legend>Endpoint</legend>
+        <label>
+          <input
+            type="radio"
+            name="endpoint"
+            value="https://rcgame.azurewebsites.net/api/GetLevelAchievementsD4j2Drb88fDaKfQb75P"
+            checked
+          />
+          Level Achievements
+        </label>
+        <label>
+          <input
+            type="radio"
+            name="endpoint"
+            value="https://rcgame.azurewebsites.net/api/GetToolUsagewErh4ddiRgghd4vGGHJSwd"
+          />
+          Tool Usage
+        </label>
+      </fieldset>
+      <label class="search-box">
+        Search all columns:
         <input
-          type="radio"
-          name="endpoint"
-          value="https://rcgame.azurewebsites.net/api/GetLevelAchievementsD4j2Drb88fDaKfQb75P"
-          checked
+          id="searchInput"
+          type="search"
+          placeholder="e.g. Vio  (matches Violin, Viola)"
+          autocomplete="off"
         />
-        Level Achievements
       </label>
-      <label>
-        <input
-          type="radio"
-          name="endpoint"
-          value="https://rcgame.azurewebsites.net/api/GetToolUsagewErh4ddiRgghd4vGGHJSwd"
-        />
-        Tool Usage
-      </label>
-    </fieldset>
+    </div>
     <div>
       <button id="fetchBtn" type="button">Fetch & Render</button>
       <button id="clearBtn" type="button">Clear</button>

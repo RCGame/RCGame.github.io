@@ -2,6 +2,7 @@ const ignored = new Set(["_rid", "_self", "_etag", "_attachments", "_ts", "id"])
 
 const $ = (s) => document.querySelector(s);
 const urlInput = $("#urlInput");
+const searchInput = $("#searchInput");
 const statusEl = $("#status");
 const output = $("#output");
 const endpointRadios = document.querySelectorAll('input[name="endpoint"]');
@@ -375,12 +376,72 @@ $("#fetchBtn").addEventListener("click", fetchAndRender);
 $("#clearBtn").addEventListener("click", () => {
   output.innerHTML = "";
   statusEl.textContent = "";
+  CURRENT_ROWS = [];
+  setFilterText("");
 });
 
 // --- NEW: sort state (module-level)
 let SORT_STATE = { col: null, dir: null }; // dir: 'desc' | 'asc'
 let CURRENT_ROWS = []; // original data (array of objects)
 let CURRENT_COLS = []; // union of columns being shown
+
+// --- NEW: multi-column search state
+let FILTER_TERMS = []; // lowercase terms; a row must match every one of them
+const SEARCH_INDEX = new WeakMap(); // row object -> cached lowercase search tokens
+
+function setFilterText(text) {
+  FILTER_TERMS = String(text || "")
+    .toLowerCase()
+    .split(/\s+/)
+    .filter(Boolean);
+  if (searchInput && searchInput.value !== text) searchInput.value = text;
+}
+
+// Tokens searched for a row: each displayed cell value, plus each word inside it,
+// so "Vio" matches "Violin"/"Viola" and "pitch" matches "Practice Mode: Pitch Only".
+function rowSearchTokens(row) {
+  if (!row || typeof row !== "object" || Array.isArray(row)) {
+    return [valueToString(row).toLowerCase()];
+  }
+
+  let tokens = SEARCH_INDEX.get(row);
+  if (tokens) return tokens;
+
+  tokens = [];
+  for (const col of CURRENT_COLS) {
+    const text = valueToString(mapEnumValue(col, row[col], row)).toLowerCase();
+    if (!text) continue;
+    tokens.push(text);
+    for (const word of text.split(/[^a-z0-9#+.]+/)) {
+      if (word && word !== text) tokens.push(word);
+    }
+  }
+  SEARCH_INDEX.set(row, tokens);
+  return tokens;
+}
+
+function matchesFilter(row) {
+  if (!FILTER_TERMS.length) return true;
+  const tokens = rowSearchTokens(row);
+  return FILTER_TERMS.every((term) => tokens.some((t) => t.startsWith(term)));
+}
+
+if (searchInput) {
+  let debounce = null;
+  searchInput.addEventListener("input", () => {
+    clearTimeout(debounce);
+    debounce = setTimeout(() => {
+      setFilterText(searchInput.value);
+      if (CURRENT_ROWS.length) renderTable(CURRENT_ROWS);
+    }, 120);
+  });
+  searchInput.addEventListener("search", () => {
+    // native clear (×) on type="search"
+    clearTimeout(debounce);
+    setFilterText(searchInput.value);
+    if (CURRENT_ROWS.length) renderTable(CURRENT_ROWS);
+  });
+}
 
 // Replace your existing fetchAndRender's success section with this:
 async function fetchAndRender() {
@@ -400,8 +461,7 @@ async function fetchAndRender() {
     CURRENT_ROWS = data.slice();
     SORT_STATE = { col: null, dir: null };
 
-    renderTable(CURRENT_ROWS);
-    setStatus(`Loaded ${data.length} item(s).`);
+    renderTable(CURRENT_ROWS); // sets the status line (incl. filter counts)
   } catch (e) {
     setError(`Error: ${e.message}. ${corsHint(url)}`);
   }
@@ -411,9 +471,10 @@ async function fetchAndRender() {
 
 // Replace your renderTable with the enhanced version:
 function renderTable(rows) {
-  // Derive columns (union), exclude ignored
+  // Derive columns (union), exclude ignored.
+  // Always from the full data set so columns stay stable while filtering.
   const cols = Array.from(
-    rows.reduce((set, obj) => {
+    (CURRENT_ROWS.length ? CURRENT_ROWS : rows).reduce((set, obj) => {
       if (obj && typeof obj === "object" && !Array.isArray(obj)) {
         for (const k of Object.keys(obj)) if (!ignored.has(k)) set.add(k);
       }
@@ -428,8 +489,9 @@ function renderTable(rows) {
 
   CURRENT_COLS = cols;
 
-  // If currently sorted, apply it to CURRENT_ROWS before drawing
-  const rowsToDraw = sortIfNeeded(CURRENT_ROWS);
+  // Filter first (needs CURRENT_COLS), then apply the current sort
+  const filtered = FILTER_TERMS.length ? rows.filter(matchesFilter) : rows;
+  const rowsToDraw = sortIfNeeded(filtered);
 
   const thead = `
     <thead>
@@ -445,7 +507,10 @@ function renderTable(rows) {
       </tr>
     </thead>`;
 
-  const tbody = `
+  const tbody = rowsToDraw.length === 0 ? `
+    <tbody>
+      <tr><td colspan="${cols.length}">No records match the search.</td></tr>
+    </tbody>` : `
     <tbody>
       ${rowsToDraw.map(obj => {
         if (!obj || typeof obj !== "object" || Array.isArray(obj)) {
@@ -461,6 +526,12 @@ function renderTable(rows) {
     </tbody>`;
 
   output.innerHTML = `<table>${thead}${tbody}</table>`;
+
+  setStatus(
+    FILTER_TERMS.length
+      ? `Showing ${rowsToDraw.length} of ${rows.length} item(s) matching "${FILTER_TERMS.join(" ")}".`
+      : `Loaded ${rows.length} item(s).`
+  );
 
   // Attach header click handlers
   const head = output.querySelector("thead");

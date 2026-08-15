@@ -31,7 +31,21 @@ h1 {
   max-width: 1000px;
 }
 
+/* Endpoint picker + search side by side, roughly half width each */
+.controls-row {
+  display: flex;
+  gap: 12px;
+  align-items: flex-end;
+  flex-wrap: wrap;
+}
+
+.controls-row > * {
+  flex: 1 1 320px;
+  min-width: 0;
+}
+
 .endpoint-picker {
+  margin: 0;
   border: 1px solid #ddd;
   border-radius: 6px;
   padding: 8px 12px;
@@ -61,7 +75,8 @@ h1 {
   cursor: not-allowed;
 }
 
-input[type="url"] {
+input[type="url"],
+input[type="search"] {
   width: 100%;
   padding: 10px 12px;
   border: 1px solid #ccc;
@@ -70,7 +85,15 @@ input[type="url"] {
   transition: border-color 0.2s ease;
 }
 
-input[type="url"]:focus {
+.search-box {
+  display: grid;
+  gap: 4px;
+  font-size: 0.9rem;
+  color: #555;
+}
+
+input[type="url"]:focus,
+input[type="search"]:focus {
   border-color: #0078d7;
   outline: none;
   box-shadow: 0 0 3px rgba(0, 120, 215, 0.4);
