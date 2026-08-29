@@ -18,6 +18,8 @@ const COLUMNS = [
   { key: "topInstrument", label: "MostUsedInstrument" }
 ];
 
+const ELIGIBLE_RETENTION_THRESHOLDS = [30, 60, 90, 120, 150, 180];
+
 const InstrumentEnum = {
   0: "Other",
   1: "Piano",
@@ -130,6 +132,9 @@ function getSelectedView() {
 function renderSelectedView() {
   if (CURRENT_VIEW === "milestones") {
     return renderRetentionMilestonesChart(CURRENT_ROWS);
+  }
+  if (CURRENT_VIEW === "eligible") {
+    return renderEligibleRetentionChart(CURRENT_ROWS);
   }
   return renderTable(CURRENT_ROWS);
 }
@@ -486,6 +491,153 @@ function renderRetentionMilestonesChart(rows) {
   return true;
 }
 
+function renderEligibleRetentionChart(rows) {
+  destroyChart();
+
+  if (!rows.length) {
+    output.innerHTML = "<p>No retention data found.</p>";
+    return true;
+  }
+
+  if (typeof Chart === "undefined") {
+    setError("Chart.js failed to load.");
+    return false;
+  }
+
+  const { cutoffTs, buckets } = buildEligibleRetentionBuckets(rows);
+  if (!buckets.length) {
+    output.innerHTML = "<p>No usable first-seen dates found.</p>";
+    return true;
+  }
+
+  const cutoffLabel = cutoffTs == null ? "the latest activity" : formatDayLabel(cutoffTs);
+
+  output.innerHTML = `
+    <div class="chart-panel">
+      <div class="chart-canvas-wrap">
+        <canvas id="retentionMilestonesChart"></canvas>
+      </div>
+    </div>
+    <p class="hint">
+      Each bar only counts devices that were first seen at least that many days before
+      ${escapeHtml(cutoffLabel)} (the newest activity in this dataset), so devices that
+      have not yet had the chance to reach a threshold are excluded from it.
+    </p>`;
+
+  const canvas = $("#retentionMilestonesChart");
+  applyChartSizing(buckets.length);
+  const yAxisMax = getPercentageAxisMax(buckets);
+
+  chartInstance = new Chart(canvas, {
+    type: "bar",
+    data: {
+      labels: buckets.map((bucket) => `${bucket.threshold} days`),
+      datasets: [{
+        label: "Eligible Users",
+        data: buckets.map((bucket) => bucket.percent),
+        backgroundColor: "#2a9d54",
+        borderColor: "#2a9d54",
+        borderWidth: 1,
+        counts: buckets.map((bucket) => bucket.count),
+        eligibles: buckets.map((bucket) => bucket.eligible)
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      animation: false,
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          callbacks: {
+            label(context) {
+              const eligible = context.dataset.eligibles[context.dataIndex];
+              if (!eligible) return "No devices have had this much opportunity yet";
+              const count = context.dataset.counts[context.dataIndex];
+              return `${context.parsed.y.toFixed(1)}% (${count} of ${eligible} eligible users)`;
+            }
+          }
+        }
+      },
+      scales: {
+        x: {
+          title: {
+            display: true,
+            text: "Retention Threshold"
+          },
+          ticks: {
+            autoSkip: false,
+            maxRotation: 0,
+            minRotation: 0
+          }
+        },
+        y: {
+          beginAtZero: true,
+          max: yAxisMax,
+          ticks: {
+            callback(value) {
+              return `${value}%`;
+            }
+          },
+          title: {
+            display: true,
+            text: "Eligible Users Reaching Threshold"
+          }
+        }
+      }
+    }
+  });
+
+  return true;
+}
+
+function buildEligibleRetentionBuckets(rows) {
+  // The newest activity in the dataset stands in for "now" so a stale export
+  // does not credit devices with opportunity they never actually had.
+  let cutoffTs = null;
+  for (const row of rows) {
+    if (row.latestTs == null) continue;
+    if (cutoffTs == null || row.latestTs > cutoffTs) cutoffTs = row.latestTs;
+  }
+  if (cutoffTs == null) return { cutoffTs: null, buckets: [] };
+
+  const devices = [];
+  for (const row of rows) {
+    if (row.earliestTs == null) continue;
+    const opportunityDays = calculateRetentionDays(row.earliestTs, cutoffTs);
+    const retentionDays = toNumber(row.retentionDays);
+    if (opportunityDays == null || retentionDays == null) continue;
+    devices.push({ opportunityDays, retentionDays });
+  }
+  if (!devices.length) return { cutoffTs, buckets: [] };
+
+  const buckets = ELIGIBLE_RETENTION_THRESHOLDS.map((threshold) => {
+    let eligible = 0;
+    let reached = 0;
+    for (const device of devices) {
+      if (device.opportunityDays < threshold) continue;
+      eligible += 1;
+      if (device.retentionDays >= threshold) reached += 1;
+    }
+    return {
+      threshold,
+      eligible,
+      count: reached,
+      percent: eligible ? (reached / eligible) * 100 : 0
+    };
+  });
+
+  return { cutoffTs, buckets };
+}
+
+function formatDayLabel(ts) {
+  const d = new Date(ts);
+  const yyyy = d.getUTCFullYear();
+  const mm = String(d.getUTCMonth() + 1).padStart(2, "0");
+  const dd = String(d.getUTCDate()).padStart(2, "0");
+  return `${yyyy}-${mm}-${dd}`;
+}
+
 function getPercentageAxisMax(buckets) {
   const highestPercent = buckets.reduce((max, bucket) => Math.max(max, bucket.percent), 0);
   return Math.min(100, Math.max(10, Math.ceil(highestPercent / 10) * 10));
@@ -625,10 +777,18 @@ function setStatus(msg) {
 }
 
 function setLoadedStatus() {
-  const suffix = CURRENT_VIEW === "milestones"
-    ? `retention milestone chart (${getMilestoneStep()}-day steps)`
-    : "user list";
+  const suffix = getLoadedViewLabel();
   setStatus(`Loaded ${CURRENT_ITEM_COUNT} item(s). ${CURRENT_ROWS.length} device(s). Showing ${suffix}.`);
+}
+
+function getLoadedViewLabel() {
+  if (CURRENT_VIEW === "milestones") {
+    return `retention milestone chart (${getMilestoneStep()}-day steps)`;
+  }
+  if (CURRENT_VIEW === "eligible") {
+    return "eligible retention chart";
+  }
+  return "user list";
 }
 
 function setError(msg) {
