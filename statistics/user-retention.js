@@ -18,7 +18,7 @@ const COLUMNS = [
   { key: "topInstrument", label: "MostUsedInstrument" }
 ];
 
-const ELIGIBLE_RETENTION_THRESHOLDS = [30, 60, 90, 120, 150, 180];
+const ELIGIBLE_RETENTION_THRESHOLDS = [7, 14, 30, 60, 90, 120, 150, 180, 210];
 
 const InstrumentEnum = {
   0: "Other",
