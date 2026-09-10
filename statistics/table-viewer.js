@@ -80,7 +80,16 @@ const PracticeCategoriesEnum = {
 const MusicTheoryCategoryEnum = {
   0: "Scale",
   1: "Chord",
-  2: "Rhythm"
+  2: "Rhythm",
+  3: "Aural"
+};
+
+const AuralCategoryEnum = {
+  0: "RhythmMetre",
+  1: "MelodyMemory",
+  2: "IntervalsPitch",
+  3: "ChordsHarmony",
+  4: "MusicalFeatures"
 };
 
 const ScaleModeEnum = {
@@ -306,6 +315,9 @@ function mapEnumValue(key, value, row) {
   }
   if (keyLower === "musictheorycategory") {
     return MusicTheoryCategoryEnum[value] ?? value;
+  }
+  if (keyLower === "auralcategory") {
+    return AuralCategoryEnum[value] ?? value;
   }
   if (keyLower === "scalemode") {
     return ScaleModeEnum[value] ?? value;
