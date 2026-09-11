@@ -65,7 +65,8 @@ function buildActiveRows(items, intervalDays) {
   const intervalMs = intervalDays * DAY_MS;
   const deviceKey = findKey(items, ["deviceid"]);
   const dateKey = findKey(items, ["datetime"]);
-  if (!deviceKey || !dateKey) return [];
+  const platformKey = findKey(items, ["platform"]);
+  if (!deviceKey || !dateKey || !platformKey) return [];
 
   const parsed = [];
   for (const item of items) {
@@ -76,7 +77,9 @@ function buildActiveRows(items, intervalDays) {
 
     const ts = toTimestamp(item[dateKey]);
     if (ts == null) continue;
-    parsed.push({ deviceId, ts });
+    const platform = normalizePlatform(item[platformKey]);
+    if (!platform) continue;
+    parsed.push({ deviceId, ts, platform });
   }
   if (!parsed.length) return [];
 
@@ -100,11 +103,16 @@ function buildActiveRows(items, intervalDays) {
         startTs,
         endTs,
         label: formatIntervalLabel(startTs, endTs),
-        devices: new Set()
+        iosDevices: new Set(),
+        androidDevices: new Set()
       };
       bucketMap.set(indexFromEnd, bucket);
     }
-    bucket.devices.add(entry.deviceId);
+    if (entry.platform === "ios") {
+      bucket.iosDevices.add(entry.deviceId);
+    } else {
+      bucket.androidDevices.add(entry.deviceId);
+    }
   }
 
   const maxIndexFromEnd = Math.floor((maxTs - minTs) / intervalMs);
@@ -114,7 +122,8 @@ function buildActiveRows(items, intervalDays) {
     if (existing) {
       rows.push({
         label: existing.label,
-        count: existing.devices.size
+        iosCount: existing.iosDevices.size,
+        androidCount: existing.androidDevices.size
       });
       continue;
     }
@@ -124,14 +133,16 @@ function buildActiveRows(items, intervalDays) {
     const startTs = endTs - intervalMs + 1;
     rows.push({
       label: formatIntervalLabel(startTs, endTs),
-      count: 0
+      iosCount: 0,
+      androidCount: 0
     });
   }
 
   return rows.map((bucket) => ({
-      label: bucket.label,
-      count: bucket.count
-    }));
+    label: bucket.label,
+    iosCount: bucket.iosCount,
+    androidCount: bucket.androidCount
+  }));
 }
 
 function renderChart(rows) {
@@ -160,30 +171,40 @@ function renderChart(rows) {
     type: "bar",
     data: {
       labels: rows.map((r) => r.label),
-      datasets: [{
-        label: `${intervalDays}-Day Active Users`,
-        data: rows.map((r) => r.count),
-        backgroundColor: "#1f77d0",
-        borderColor: "#1f77d0",
-        borderWidth: 1
-      }]
+      datasets: [
+        {
+          label: "iOS",
+          data: rows.map((r) => r.iosCount),
+          backgroundColor: "#1f77d0",
+          borderColor: "#1f77d0",
+          borderWidth: 1
+        },
+        {
+          label: "Android",
+          data: rows.map((r) => r.androidCount),
+          backgroundColor: "#2ca02c",
+          borderColor: "#2ca02c",
+          borderWidth: 1
+        }
+      ]
     },
     options: {
       responsive: true,
       maintainAspectRatio: false,
       animation: false,
       plugins: {
-        legend: { display: false },
+        legend: { display: true },
         tooltip: {
           callbacks: {
             label(context) {
-              return `Users: ${context.parsed.y}`;
+              return `${context.dataset.label}: ${context.parsed.y}`;
             }
           }
         }
       },
       scales: {
         x: {
+          stacked: true,
           title: {
             display: true,
             text: `${intervalDays}-Day Interval`
@@ -195,6 +216,7 @@ function renderChart(rows) {
           }
         },
         y: {
+          stacked: true,
           beginAtZero: true,
           ticks: { precision: 0 },
           title: {
@@ -205,6 +227,13 @@ function renderChart(rows) {
       }
     }
   });
+}
+
+function normalizePlatform(value) {
+  const platform = String(value ?? "").trim().toLowerCase();
+  if (platform === "0" || platform === "ios") return "ios";
+  if (platform === "1" || platform === "android") return "android";
+  return null;
 }
 
 function applyChartSizing(barCount) {
