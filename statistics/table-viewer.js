@@ -42,7 +42,7 @@ const AcrylicTouchableEnum = {
   30: "Practice Mode: Pitch & Rhythm"
 };
 
-const InstrumentEnum = {
+const InstrumentEnum = (window.SharedEnums && window.SharedEnums.InstrumentEnum) || {
   0: "Other",
   1: "Piano",
   2: "Violin",
@@ -64,20 +64,20 @@ const InstrumentEnum = {
   18: "Tuba"
 };
 
-const PlatformEnum = {
+const PlatformEnum = (window.SharedEnums && window.SharedEnums.PlatformEnum) || {
   0: "iOS",
   1: "Android",
   2: "Windows"
 };
 
-const PracticeCategoriesEnum = {
+const PracticeCategoriesEnum = (window.SharedEnums && window.SharedEnums.PracticeCategoriesEnum) || {
   0: "FlashCard",
   1: "FullFlowSheetMusic",
   2: "RealSongs",
   3: "MusicTheory"
 };
 
-const MusicTheoryCategoryEnum = {
+const MusicTheoryCategoryEnum = (window.SharedEnums && window.SharedEnums.MusicTheoryCategoryEnum) || {
   0: "Scale",
   1: "Chord",
   2: "Rhythm",

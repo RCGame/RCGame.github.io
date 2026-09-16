@@ -16,6 +16,22 @@ const PIE_CHART_ENUMS = {
     3: "Aural"
   }
 };
+const sharedUsageEnums = window.SharedEnums || {};
+
+PIE_CHART_ENUMS.practiceCategory = sharedUsageEnums.PracticeCategoriesEnum || PIE_CHART_ENUMS.practiceCategory;
+PIE_CHART_ENUMS.practiceMode = sharedUsageEnums.PracticeModeEnum || PIE_CHART_ENUMS.practiceMode;
+PIE_CHART_ENUMS.musicTheoryCategory = sharedUsageEnums.MusicTheoryCategoryEnum || PIE_CHART_ENUMS.musicTheoryCategory;
+PIE_CHART_ENUMS.instrument = sharedUsageEnums.InstrumentEnum || {};
+PIE_CHART_ENUMS.platform = sharedUsageEnums.PlatformEnum || {};
+
+const PIE_FIELD_ENUMS = Object.freeze({
+  practicecategory: PIE_CHART_ENUMS.practiceCategory,
+  practicemode: PIE_CHART_ENUMS.practiceMode,
+  musictheorycategory: PIE_CHART_ENUMS.musicTheoryCategory,
+  instrument: PIE_CHART_ENUMS.instrument,
+  platform: PIE_CHART_ENUMS.platform
+});
+
 
 const PIE_CHART_META = [
   {
@@ -36,12 +52,6 @@ const PIE_CHART_META = [
 ];
 
 let renderedCharts = [];
-
-window.addEventListener("tableviewer:data", (event) => {
-  renderPieCharts(event.detail.items);
-});
-
-window.addEventListener("tableviewer:clear", clearPieCharts);
 
 function renderPieCharts(items) {
   clearPieCharts();
@@ -260,3 +270,151 @@ function setChartMessage(message, isError) {
   chartsEl.append(status);
 }
 
+(function enableChartFiltering() {
+  const urlInput = document.getElementById("urlInput");
+  const searchInput = document.getElementById("searchInput");
+  const statusEl = document.getElementById("status");
+  const fetchButton = document.getElementById("fetchBtn");
+  const clearButton = document.getElementById("clearBtn");
+
+  let rawItems = [];
+  let filterTerms = [];
+  let searchTimer = null;
+  const searchTextCache = new WeakMap();
+
+  fetchButton.addEventListener("click", fetchAndRender);
+  clearButton.addEventListener("click", clearPage);
+
+  searchInput.addEventListener("input", () => {
+    clearTimeout(searchTimer);
+    searchTimer = setTimeout(() => {
+      setFilterTerms(searchInput.value);
+      renderFilteredCharts();
+    }, 120);
+  });
+
+  searchInput.addEventListener("search", () => {
+    clearTimeout(searchTimer);
+    setFilterTerms(searchInput.value);
+    renderFilteredCharts();
+  });
+
+  async function fetchAndRender() {
+    const url = urlInput.value.trim();
+    if (!url) return;
+
+    rawItems = [];
+    clearPieCharts();
+    setStatus("Fetching " + url + " ...");
+
+    try {
+      const response = await fetch(url, { headers: { Accept: "application/json" } });
+      if (!response.ok) throw new Error("HTTP " + response.status + " " + response.statusText);
+
+      const data = await response.json();
+      if (!Array.isArray(data)) throw new Error("Response is not a JSON array.");
+
+      rawItems = data;
+      setFilterTerms(searchInput.value);
+      renderFilteredCharts();
+    } catch (error) {
+      setError("Error: " + error.message + ". " + corsHint(url));
+    }
+  }
+
+  function clearPage() {
+    clearTimeout(searchTimer);
+    rawItems = [];
+    filterTerms = [];
+    searchInput.value = "";
+    clearPieCharts();
+    setStatus("");
+  }
+
+  function setFilterTerms(value) {
+    filterTerms = String(value || "")
+      .toLowerCase()
+      .trim()
+      .split(/\s+/)
+      .filter(Boolean);
+  }
+
+  function renderFilteredCharts() {
+    if (!rawItems.length) {
+      clearPieCharts();
+      return;
+    }
+
+    const filteredItems = filterTerms.length
+      ? rawItems.filter(matchesSearch)
+      : rawItems;
+
+    renderPieCharts(filteredItems);
+
+    if (filterTerms.length) {
+      setStatus(
+        "Showing " + filteredItems.length.toLocaleString() + " of " +
+        rawItems.length.toLocaleString() + " session" +
+        (rawItems.length === 1 ? "" : "s") +
+        " matching \"" + filterTerms.join(" ") + "\"."
+      );
+    } else {
+      setStatus(
+        "Loaded " + rawItems.length.toLocaleString() + " session" +
+        (rawItems.length === 1 ? "" : "s") + "."
+      );
+    }
+  }
+
+  function matchesSearch(item) {
+    if (!item || typeof item !== "object" || Array.isArray(item)) return false;
+    const text = getSearchText(item);
+    return filterTerms.every((term) => text.includes(term));
+  }
+
+  function getSearchText(item) {
+    let cached = searchTextCache.get(item);
+    if (cached) return cached;
+
+    const fields = [];
+    for (const [key, value] of Object.entries(item)) {
+      fields.push(key, valueToSearchString(value), mapSearchValue(key, value));
+    }
+
+    cached = fields.join(" ").toLowerCase();
+    searchTextCache.set(item, cached);
+    return cached;
+  }
+
+  function mapSearchValue(key, value) {
+    const labels = PIE_FIELD_ENUMS[key.toLowerCase()];
+    return labels ? mapPieEnumValue(value, labels) : valueToSearchString(value);
+  }
+
+  function valueToSearchString(value) {
+    if (value == null) return "";
+    return typeof value === "object" ? JSON.stringify(value) : String(value);
+  }
+
+  function setStatus(message) {
+    statusEl.textContent = message;
+    statusEl.className = "status";
+  }
+
+  function setError(message) {
+    statusEl.textContent = message;
+    statusEl.className = "status error";
+  }
+
+  function corsHint(url) {
+    try {
+      const parsed = new URL(url);
+      const fromFile = location.protocol === "file:";
+      const crossOrigin = location.origin !== parsed.protocol + "//" + parsed.host;
+      if (fromFile || crossOrigin) {
+        return "If this page is opened from file:// or a different origin, enable CORS on the API or host this HTML from the same origin/port.";
+      }
+    } catch {}
+    return "";
+  }
+})();

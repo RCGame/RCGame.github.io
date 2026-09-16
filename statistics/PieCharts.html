@@ -17,32 +17,12 @@
       />
     </label>
     <div class="controls-row">
-      <fieldset class="endpoint-picker">
-        <legend>Endpoint</legend>
-        <label>
-          <input
-            type="radio"
-            name="endpoint"
-            value="https://rcgame.azurewebsites.net/api/GetLevelAchievementsD4j2Drb88fDaKfQb75P"
-            checked
-          />
-          Level Achievements
-        </label>
-        <label>
-          <input
-            type="radio"
-            name="endpoint"
-            value="https://rcgame.azurewebsites.net/api/GetToolUsagewErh4ddiRgghd4vGGHJSwd"
-          />
-          Tool Usage
-        </label>
-      </fieldset>
       <label class="search-box">
         Search all columns:
         <input
           id="searchInput"
           type="search"
-          placeholder="e.g. MusicTheory"
+          placeholder="e.g. FullFlowSheetMusic or Oboe"
           autocomplete="off"
         />
       </label>
@@ -56,15 +36,10 @@
 
   <main>
     <section id="charts" class="charts" aria-label="Session usage pie charts"></section>
-    <section class="table-section" aria-label="Achievement records">
-      <h2>Achievement records</h2>
-      <div id="output"></div>
-    </section>
   </main>
 
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
   <script src="shared-enums.js"></script>
-  <script src="table-viewer.js"></script>
   <script src="pie-charts.js"></script>
 </body>
 </html>
