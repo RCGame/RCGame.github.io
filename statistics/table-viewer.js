@@ -390,6 +390,7 @@ $("#clearBtn").addEventListener("click", () => {
   statusEl.textContent = "";
   CURRENT_ROWS = [];
   setFilterText("");
+  window.dispatchEvent(new CustomEvent("tableviewer:clear"));
 });
 
 // --- NEW: sort state (module-level)
@@ -462,6 +463,7 @@ async function fetchAndRender() {
 
   setStatus(`Fetching ${url} ...`);
   output.innerHTML = "";
+  window.dispatchEvent(new CustomEvent("tableviewer:clear"));
 
   try {
     const resp = await fetch(url, { headers: { "Accept": "application/json" }});
@@ -474,6 +476,9 @@ async function fetchAndRender() {
     SORT_STATE = { col: null, dir: null };
 
     renderTable(CURRENT_ROWS); // sets the status line (incl. filter counts)
+    window.dispatchEvent(new CustomEvent("tableviewer:data", {
+      detail: { items: CURRENT_ROWS, url }
+    }));
   } catch (e) {
     setError(`Error: ${e.message}. ${corsHint(url)}`);
   }

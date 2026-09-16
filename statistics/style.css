@@ -211,3 +211,54 @@ tbody tr:hover {
 
 th.sortable { cursor: pointer; user-select: none; }
 th .sort-indicator { margin-left: 6px; opacity: 0.6; font-size: 0.85em; }
+/* ---------- Session usage pie charts ---------- */
+.pie-charts-page {
+  overflow: auto;
+}
+
+.pie-charts-page main {
+  display: grid;
+  gap: 24px;
+}
+
+.pie-charts-page #output {
+  max-height: 560px;
+  overflow: auto;
+}
+
+.pie-charts-page h2 {
+  font-size: 1.1rem;
+  margin: 0 0 6px;
+}
+
+.charts {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 16px;
+}
+
+.pie-charts-page .chart-panel {
+  min-height: 360px;
+}
+
+.pie-charts-page .chart-canvas-wrap {
+  height: 275px;
+  min-height: 0;
+}
+
+.chart-description,
+.chart-empty {
+  color: #555;
+  font-size: 0.9rem;
+  margin: 0 0 12px;
+}
+
+.chart-empty {
+  padding-top: 80px;
+  text-align: center;
+}
+
+.table-section {
+  display: grid;
+  gap: 8px;
+}

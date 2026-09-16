@@ -1,0 +1,71 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>Session Usage Pie Charts</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body class="pie-charts-page">
+  <div class="controls">
+    <label>
+      JSON endpoint:
+      <input
+        id="urlInput"
+        type="url"
+        value="https://rcgame.azurewebsites.net/api/GetLevelAchievementsD4j2Drb88fDaKfQb75P?from=2026-09-01"
+      />
+    </label>
+    <div class="controls-row">
+      <fieldset class="endpoint-picker">
+        <legend>Endpoint</legend>
+        <label>
+          <input
+            type="radio"
+            name="endpoint"
+            value="https://rcgame.azurewebsites.net/api/GetLevelAchievementsD4j2Drb88fDaKfQb75P"
+            checked
+          />
+          Level Achievements
+        </label>
+        <label>
+          <input
+            type="radio"
+            name="endpoint"
+            value="https://rcgame.azurewebsites.net/api/GetToolUsagewErh4ddiRgghd4vGGHJSwd"
+          />
+          Tool Usage
+        </label>
+      </fieldset>
+      <label class="search-box">
+        Search all columns:
+        <input
+          id="searchInput"
+          type="search"
+          placeholder="e.g. MusicTheory"
+          autocomplete="off"
+        />
+      </label>
+    </div>
+    <div>
+      <button id="fetchBtn" type="button">Fetch &amp; Render</button>
+      <button id="clearBtn" type="button">Clear</button>
+    </div>
+    <div id="status" class="status" role="status"></div>
+  </div>
+
+  <main>
+    <section id="charts" class="charts" aria-label="Session usage pie charts"></section>
+    <section class="table-section" aria-label="Achievement records">
+      <h2>Achievement records</h2>
+      <div id="output"></div>
+    </section>
+  </main>
+
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
+  <script src="shared-enums.js"></script>
+  <script src="table-viewer.js"></script>
+  <script src="pie-charts.js"></script>
+</body>
+</html>
+
