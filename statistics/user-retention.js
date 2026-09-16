@@ -20,27 +20,7 @@ const COLUMNS = [
 
 const ELIGIBLE_RETENTION_THRESHOLDS = [7, 14, 30, 60, 90, 120, 150, 180, 210];
 
-const InstrumentEnum = {
-  0: "Other",
-  1: "Piano",
-  2: "Violin",
-  3: "Viola",
-  4: "Cello",
-  5: "Guitar",
-  6: "Clarinet",
-  7: "Piccolo",
-  8: "French Horn",
-  9: "Flute",
-  10: "Double Bass",
-  11: "Trumpet",
-  12: "Harp",
-  13: "Bass",
-  14: "Oboe",
-  15: "Bassoon",
-  16: "Saxophone",
-  17: "Trombone",
-  18: "Tuba"
-};
+const InstrumentEnum = (window.SharedEnums && window.SharedEnums.InstrumentEnum) || {};
 
 const LangaugeRegionEnum =
   (window.SharedEnums && window.SharedEnums.LangaugeRegionEnum) || {};

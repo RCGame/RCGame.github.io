@@ -5,27 +5,7 @@ const output = $("#output");
 const controlsEl = document.querySelector(".controls");
 const modeRadios = document.querySelectorAll('input[name="summaryMode"]');
 
-const InstrumentEnum = {
-  0: "Other",
-  1: "Piano",
-  2: "Violin",
-  3: "Viola",
-  4: "Cello",
-  5: "Guitar",
-  6: "Clarinet",
-  7: "Piccolo",
-  8: "French Horn",
-  9: "Flute",
-  10: "Double Bass",
-  11: "Trumpet",
-  12: "Harp",
-  13: "Bass",
-  14: "Oboe",
-  15: "Bassoon",
-  16: "Saxophone",
-  17: "Trombone",
-  18: "Tuba"
-};
+const InstrumentEnum = (window.SharedEnums && window.SharedEnums.InstrumentEnum) || {};
 
 const MODE_META = {
   users: {

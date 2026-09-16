@@ -1,28 +1,11 @@
+const SharedEnums = window.SharedEnums || {};
 const PIE_CHART_ENUMS = {
-  practiceCategory: {
-    0: "FlashCard",
-    1: "FullFlowSheetMusic",
-    2: "RealSongs",
-    3: "MusicTheory"
-  },
-  practiceMode: {
-    0: "PitchOnly",
-    1: "Rhythm"
-  },
-  musicTheoryCategory: {
-    0: "Scale",
-    1: "Chord",
-    2: "Rhythm",
-    3: "Aural"
-  }
+  practiceCategory: SharedEnums.PracticeCategoriesEnum || {},
+  practiceMode: SharedEnums.PracticeModeEnum || {},
+  musicTheoryCategory: SharedEnums.MusicTheoryCategoryEnum || {},
+  instrument: SharedEnums.InstrumentEnum || {},
+  platform: SharedEnums.PlatformEnum || {}
 };
-const sharedUsageEnums = window.SharedEnums || {};
-
-PIE_CHART_ENUMS.practiceCategory = sharedUsageEnums.PracticeCategoriesEnum || PIE_CHART_ENUMS.practiceCategory;
-PIE_CHART_ENUMS.practiceMode = sharedUsageEnums.PracticeModeEnum || PIE_CHART_ENUMS.practiceMode;
-PIE_CHART_ENUMS.musicTheoryCategory = sharedUsageEnums.MusicTheoryCategoryEnum || PIE_CHART_ENUMS.musicTheoryCategory;
-PIE_CHART_ENUMS.instrument = sharedUsageEnums.InstrumentEnum || {};
-PIE_CHART_ENUMS.platform = sharedUsageEnums.PlatformEnum || {};
 
 const PIE_FIELD_ENUMS = Object.freeze({
   practicecategory: PIE_CHART_ENUMS.practiceCategory,
@@ -31,7 +14,6 @@ const PIE_FIELD_ENUMS = Object.freeze({
   instrument: PIE_CHART_ENUMS.instrument,
   platform: PIE_CHART_ENUMS.platform
 });
-
 
 const PIE_CHART_META = [
   {
