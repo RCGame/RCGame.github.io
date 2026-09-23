@@ -13,6 +13,7 @@ const {
   InstrumentEnum = {},
   PlatformEnum = {},
   PracticeCategoriesEnum = {},
+  IntervalsPracticeModeEnum = {},
   MusicTheoryCategoryEnum = {},
   AuralCategoryEnum = {},
   ScaleModeEnum = {},
@@ -122,6 +123,9 @@ function mapEnumValue(key, value, row) {
   }
   if (keyLower === "practicecategory") {
     return PracticeCategoriesEnum[value] ?? value;
+  }
+  if (keyLower === "intervalspracticemode") {
+    return IntervalsPracticeModeEnum[value] ?? value;
   }
   if (keyLower === "musictheorycategory") {
     return MusicTheoryCategoryEnum[value] ?? value;

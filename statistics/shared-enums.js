@@ -88,11 +88,16 @@
       0: "PitchOnly",
       1: "Rhythm"
     }),
+    IntervalsPracticeModeEnum: Object.freeze({
+      0: "Playing Mode",
+      1: "Reading Mode"
+    }),
     MusicTheoryCategoryEnum: Object.freeze({
       0: "Scale",
       1: "Chord",
       2: "Rhythm",
-      3: "Aural"
+      3: "Aural",
+      4: "Intervals"
     }),
     AuralCategoryEnum: Object.freeze({
       0: "RhythmMetre",
