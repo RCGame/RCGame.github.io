@@ -3,6 +3,8 @@ const PIE_CHART_ENUMS = {
   practiceCategory: SharedEnums.PracticeCategoriesEnum || {},
   practiceMode: SharedEnums.PracticeModeEnum || {},
   musicTheoryCategory: SharedEnums.MusicTheoryCategoryEnum || {},
+  auralCategory: SharedEnums.AuralCategoryEnum || {},
+  language: SharedEnums.LanguageRegionEnum || SharedEnums.LangaugeRegionEnum || {},
   instrument: SharedEnums.InstrumentEnum || {},
   platform: SharedEnums.PlatformEnum || {}
 };
@@ -11,6 +13,9 @@ const PIE_FIELD_ENUMS = Object.freeze({
   practicecategory: PIE_CHART_ENUMS.practiceCategory,
   practicemode: PIE_CHART_ENUMS.practiceMode,
   musictheorycategory: PIE_CHART_ENUMS.musicTheoryCategory,
+  auralcategory: PIE_CHART_ENUMS.auralCategory,
+  language: PIE_CHART_ENUMS.language,
+  languageregion: PIE_CHART_ENUMS.language,
   instrument: PIE_CHART_ENUMS.instrument,
   platform: PIE_CHART_ENUMS.platform
 });
@@ -30,6 +35,16 @@ const PIE_CHART_META = [
     title: "MusicTheory sessions by category",
     description: "Percentage of MusicTheory sessions in each music-theory category.",
     emptyMessage: "No MusicTheory category data found."
+  },
+  {
+    title: "Sessions by language",
+    description: "Percentage of all sessions in each language.",
+    emptyMessage: "No language data found."
+  },
+  {
+    title: "MusicTheory Aural sessions by category",
+    description: "Percentage of MusicTheory Aural sessions in each aural category.",
+    emptyMessage: "No MusicTheory Aural category data found."
   }
 ];
 
@@ -47,7 +62,14 @@ function renderPieCharts(items) {
   const rowsByChart = [
     buildPercentageRows(items, keys.practiceCategory, PIE_CHART_ENUMS.practiceCategory, true),
     buildPracticeModeRows(items, keys.practiceCategory, keys.practiceMode),
-    buildMusicTheoryRows(items, keys.practiceCategory, keys.musicTheoryCategory)
+    buildMusicTheoryRows(items, keys.practiceCategory, keys.musicTheoryCategory),
+    buildLanguageRows(items, keys.language),
+    buildAuralRows(
+      items,
+      keys.practiceCategory,
+      keys.musicTheoryCategory,
+      keys.auralCategory
+    )
   ];
 
   rowsByChart.forEach((rows, index) => renderChartPanel(index, rows));
@@ -65,7 +87,9 @@ function findDataKeys(items) {
   return {
     practiceCategory: findKey(items, "practicecategory"),
     practiceMode: findKey(items, "practicemode"),
-    musicTheoryCategory: findKey(items, "musictheorycategory")
+    musicTheoryCategory: findKey(items, "musictheorycategory"),
+    auralCategory: findKey(items, "auralcategory"),
+    language: findKey(items, "language") || findKey(items, "languageregion")
   };
 }
 
@@ -100,7 +124,42 @@ function buildMusicTheoryRows(items, practiceCategoryKey, musicTheoryCategoryKey
   );
 }
 
-function buildPercentageRows(items, key, labels, includeMissing = false) {
+function buildLanguageRows(items, languageKey) {
+  return buildPercentageRows(
+    items,
+    languageKey,
+    PIE_CHART_ENUMS.language,
+    true,
+    mapLanguageValue
+  );
+}
+
+function buildAuralRows(
+  items,
+  practiceCategoryKey,
+  musicTheoryCategoryKey,
+  auralCategoryKey
+) {
+  if (!practiceCategoryKey || !musicTheoryCategoryKey || !auralCategoryKey) return [];
+
+  const auralSessions = items.filter((item) =>
+    matchesEnum(item && item[practiceCategoryKey], 3, PIE_CHART_ENUMS.practiceCategory) &&
+    matchesEnum(item && item[musicTheoryCategoryKey], 3, PIE_CHART_ENUMS.musicTheoryCategory)
+  );
+  return buildPercentageRows(
+    auralSessions,
+    auralCategoryKey,
+    PIE_CHART_ENUMS.auralCategory
+  );
+}
+
+function buildPercentageRows(
+  items,
+  key,
+  labels,
+  includeMissing = false,
+  mapValue = mapPieEnumValue
+) {
   if (!key) return [];
 
   const counts = new Map();
@@ -119,7 +178,7 @@ function buildPercentageRows(items, key, labels, includeMissing = false) {
   if (!total) return [];
 
   return Array.from(counts, ([value, count]) => ({
-    label: value === "__missing__" ? "Unspecified" : mapPieEnumValue(value, labels),
+    label: value === "__missing__" ? "Unspecified" : mapValue(value, labels),
     count,
     percentage: (count / total) * 100,
     order: value === "__missing__" ? Number.MAX_SAFE_INTEGER : enumSortValue(value)
@@ -235,6 +294,16 @@ function matchesEnum(value, expectedValue, labels) {
 function mapPieEnumValue(value, labels) {
   const normalized = normalizeEnumValue(value);
   return labels[normalized] ?? String(normalized);
+}
+
+function mapLanguageValue(value, labels) {
+  const normalized = normalizeEnumValue(value);
+  if (!Number.isInteger(normalized)) return mapPieEnumValue(normalized, labels);
+
+  const languages = Object.entries(labels)
+    .filter(([bit]) => (normalized & Number(bit)) !== 0)
+    .map(([, label]) => label);
+  return languages.length ? languages.join(", ") : String(normalized);
 }
 
 function enumSortValue(value) {
@@ -370,7 +439,10 @@ function setChartMessage(message, isError) {
 
   function mapSearchValue(key, value) {
     const labels = PIE_FIELD_ENUMS[key.toLowerCase()];
-    return labels ? mapPieEnumValue(value, labels) : valueToSearchString(value);
+    if (!labels) return valueToSearchString(value);
+    return key.toLowerCase() === "language" || key.toLowerCase() === "languageregion"
+      ? mapLanguageValue(value, labels)
+      : mapPieEnumValue(value, labels);
   }
 
   function valueToSearchString(value) {
