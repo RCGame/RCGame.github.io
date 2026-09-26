@@ -127,6 +127,10 @@
       0: "NoteTypes",
       1: "TimeSignatures"
     }),
+    RhythmInputModeEnum: Object.freeze({
+      0: "Instrument",
+      1: "Clapping"
+    }),
     RhythmNoteTypeEnum: Object.freeze({
       0: "Semibreve",
       1: "Minim",

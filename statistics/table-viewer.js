@@ -20,6 +20,7 @@ const {
   MinorScaleTypeEnum = {},
   ChordTypeEnum = {},
   RhythmTypeSelectionEnum = {},
+  RhythmInputModeEnum = {},
   RhythmNoteTypeEnum = {},
   RhythmRestTypeEnum = {},
   DottedNoteTypeEnum = {},
@@ -144,6 +145,9 @@ function mapEnumValue(key, value, row) {
   }
   if (keyLower === "rhythmtypeselection") {
     return RhythmTypeSelectionEnum[value] ?? value;
+  }
+  if (keyLower === "rhythminputmode") {
+    return RhythmInputModeEnum[value] ?? value;
   }
   if (keyLower === "rhythmnotetype") {
     return RhythmNoteTypeEnum[value] ?? value;
