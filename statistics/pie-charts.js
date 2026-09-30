@@ -4,6 +4,7 @@ const PIE_CHART_ENUMS = {
   practiceMode: SharedEnums.PracticeModeEnum || {},
   musicTheoryCategory: SharedEnums.MusicTheoryCategoryEnum || {},
   auralCategory: SharedEnums.AuralCategoryEnum || {},
+  rhythmInputMode: SharedEnums.RhythmInputModeEnum || {},
   language: SharedEnums.LanguageRegionEnum || SharedEnums.LangaugeRegionEnum || {},
   instrument: SharedEnums.InstrumentEnum || {},
   platform: SharedEnums.PlatformEnum || {}
@@ -14,6 +15,7 @@ const PIE_FIELD_ENUMS = Object.freeze({
   practicemode: PIE_CHART_ENUMS.practiceMode,
   musictheorycategory: PIE_CHART_ENUMS.musicTheoryCategory,
   auralcategory: PIE_CHART_ENUMS.auralCategory,
+  rhythminputmode: PIE_CHART_ENUMS.rhythmInputMode,
   language: PIE_CHART_ENUMS.language,
   languageregion: PIE_CHART_ENUMS.language,
   instrument: PIE_CHART_ENUMS.instrument,
@@ -45,6 +47,11 @@ const PIE_CHART_META = [
     title: "MusicTheory Aural sessions by category",
     description: "Percentage of MusicTheory Aural sessions in each aural category.",
     emptyMessage: "No MusicTheory Aural category data found."
+  },
+  {
+    title: "Sessions by rhythm input mode",
+    description: "Percentage of sessions with a rhythm input mode in each rhythm input mode.",
+    emptyMessage: "No rhythm input mode data found."
   }
 ];
 
@@ -69,7 +76,8 @@ function renderPieCharts(items) {
       keys.practiceCategory,
       keys.musicTheoryCategory,
       keys.auralCategory
-    )
+    ),
+    buildPercentageRows(items, keys.rhythmInputMode, PIE_CHART_ENUMS.rhythmInputMode)
   ];
 
   rowsByChart.forEach((rows, index) => renderChartPanel(index, rows));
@@ -89,6 +97,7 @@ function findDataKeys(items) {
     practiceMode: findKey(items, "practicemode"),
     musicTheoryCategory: findKey(items, "musictheorycategory"),
     auralCategory: findKey(items, "auralcategory"),
+    rhythmInputMode: findKey(items, "rhythminputmode"),
     language: findKey(items, "language") || findKey(items, "languageregion")
   };
 }
