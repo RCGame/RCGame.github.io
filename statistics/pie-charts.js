@@ -52,6 +52,11 @@ const PIE_CHART_META = [
     title: "Sessions by rhythm input mode",
     description: "Percentage of sessions with a rhythm input mode in each rhythm input mode.",
     emptyMessage: "No rhythm input mode data found."
+  },
+  {
+    title: "Clapping sessions by star achievement",
+    description: "Percentage of Clapping sessions with a recorded star achievement.",
+    emptyMessage: "No Clapping star-achievement data found."
   }
 ];
 
@@ -77,7 +82,8 @@ function renderPieCharts(items) {
       keys.musicTheoryCategory,
       keys.auralCategory
     ),
-    buildPercentageRows(items, keys.rhythmInputMode, PIE_CHART_ENUMS.rhythmInputMode)
+    buildPercentageRows(items, keys.rhythmInputMode, PIE_CHART_ENUMS.rhythmInputMode),
+    buildClappingStarRows(items, keys.rhythmInputMode, keys.star)
   ];
 
   rowsByChart.forEach((rows, index) => renderChartPanel(index, rows));
@@ -98,6 +104,7 @@ function findDataKeys(items) {
     musicTheoryCategory: findKey(items, "musictheorycategory"),
     auralCategory: findKey(items, "auralcategory"),
     rhythmInputMode: findKey(items, "rhythminputmode"),
+    star: findKey(items, "stars"),
     language: findKey(items, "language") || findKey(items, "languageregion")
   };
 }
@@ -160,6 +167,15 @@ function buildAuralRows(
     auralCategoryKey,
     PIE_CHART_ENUMS.auralCategory
   );
+}
+
+function buildClappingStarRows(items, rhythmInputModeKey, starKey) {
+  if (!rhythmInputModeKey || !starKey) return [];
+
+  const clappingSessions = items.filter((item) =>
+    matchesEnum(item && item[rhythmInputModeKey], 1, PIE_CHART_ENUMS.rhythmInputMode)
+  );
+  return buildPercentageRows(clappingSessions, starKey, {}, false, mapStarValue);
 }
 
 function buildPercentageRows(
@@ -303,6 +319,15 @@ function matchesEnum(value, expectedValue, labels) {
 function mapPieEnumValue(value, labels) {
   const normalized = normalizeEnumValue(value);
   return labels[normalized] ?? String(normalized);
+}
+
+function mapStarValue(value) {
+  const normalized = normalizeEnumValue(value);
+  const stars = Number(normalized);
+  if (Number.isInteger(stars)) {
+    return stars + (stars === 1 ? " star" : " stars");
+  }
+  return String(normalized);
 }
 
 function mapLanguageValue(value, labels) {
