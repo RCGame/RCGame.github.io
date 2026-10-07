@@ -405,7 +405,9 @@ function sortIfNeeded(rows) {
   // Build decorated array to keep sorting stable
   const decorated = rows.map((row, idx) => {
     const mapped = mapEnumValue(col, row?.[col], row);
-    const comp = toComparable(mapped);
+    const comp = isAppVersionColumn(col)
+      ? toVersionComparable(row?.[col])
+      : toComparable(mapped);
     return { row, idx, comp };
   });
 
@@ -440,6 +442,31 @@ function toComparable(v) {
   return { t: "s", v: JSON.stringify(v).toLowerCase() };
 }
 
+function isAppVersionColumn(column) {
+  return String(column).toLowerCase() === "appversion";
+}
+
+function toVersionComparable(value) {
+  if (value == null) return null;
+
+  const version = String(value).trim();
+  if (!/^\d+(?:\.\d+)*$/.test(version)) return toComparable(version);
+
+  return {
+    t: "v",
+    v: version.split(".").map((part) => Number(part))
+  };
+}
+
+function compareVersionParts(left, right) {
+  const length = Math.max(left.length, right.length);
+  for (let index = 0; index < length; index += 1) {
+    const difference = (left[index] ?? 0) - (right[index] ?? 0);
+    if (difference) return difference;
+  }
+  return 0;
+}
+
 // Order: numbers > strings > others; then by value; nulls last
 function compareValues(a, b) {
   // Handle nulls/undefined uniformly
@@ -448,12 +475,13 @@ function compareValues(a, b) {
   if (b == null) return -1;
 
   // Type order
-  const order = { "n": 2, "s": 1, "d": 3 }; // if you enable 'd'ates, adjust order as you like
+  const order = { "n": 2, "s": 1, "d": 3, "v": 4 }; // if you enable 'd'ates, adjust order as you like
   const ao = order[a.t] ?? 0;
   const bo = order[b.t] ?? 0;
   if (ao !== bo) return ao - bo;
 
   // Same type → compare value
+  if (a.t === "v") return compareVersionParts(a.v, b.v);
   if (a.v < b.v) return -1;
   if (a.v > b.v) return 1;
   return 0;
